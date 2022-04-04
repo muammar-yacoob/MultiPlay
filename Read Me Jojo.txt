@@ -1,0 +1,10 @@
+1. Open Solution file i.e. .slnnnnnn
+2. Rebuild
+3. get the dll from the release dir i.e. D:\Unity\MyTools\MultiPlay\VSSolution\bin\Release\MultiPlay.dll
+4. close the solution 
+5. move the MultiPlay.cs out of the assets dir
+6. drag the dll to the plugins folder
+7. upload package
+
+# Warning! DO NOT USE THE #IFEDITOR
+
