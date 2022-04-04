@@ -124,7 +124,7 @@ namespace PanettoneGames
 
                 window.Show();
             }
-            catch (Exception ) { }
+            catch (Exception) { }
         }
 
 
@@ -682,15 +682,33 @@ namespace PanettoneGames
         }
         private void CreateLink(string destPath, string subDirectory)
         {
-
             if (!Directory.Exists(destPath))
                 Directory.CreateDirectory(destPath);
 
-            string args = String.Empty;
+            string cmd, args = String.Empty;
             try
             {
-                args = $"/c mklink /j \"{destPath}\\{subDirectory}\" \"{sourcePath}\\{subDirectory}\"";
-                var thread = new Thread(delegate () { ExcuteCMD("cmd", args); });
+                switch (Application.platform)
+                {
+                    case RuntimePlatform.WindowsEditor:
+                        cmd = "cmd";
+                        args = $"/c mklink /j \"{destPath}\\{subDirectory}\" \"{sourcePath}\\{subDirectory}\"";
+                        break;
+
+                    case RuntimePlatform.OSXEditor:
+                    case RuntimePlatform.LinuxEditor:
+
+                        cmd = "/bin/bash";
+                        args = $"ln -s \"{destPath}\\{subDirectory}\" \"{sourcePath}\\{subDirectory}\"";
+                        args = "-c \"" + args + "\"";
+                        break;
+
+                    default:
+                        throw new NotImplementedException("Platform not supported!");
+                }
+
+
+                var thread = new Thread(delegate () { ExcuteCMD(cmd, args); });
                 thread.Start();
             }
             catch (Exception e)
@@ -730,7 +748,7 @@ namespace PanettoneGames
             try
             {
                 string currentUnityVersion = Application.unityVersion;
-                string editorPath = EditorApplication.applicationPath;
+                string editorPath = GetAppPath(Application.platform);
                 //string editorArgs = $" -disable-assembly-updater -silent-crashes -noUpm"; //-nographics
                 string editorArgs = String.Empty; //$" -disable-assembly-updater -silent-crashes";
                 string projectPath = $" -projectPath \"{destPath}\"";
@@ -744,6 +762,21 @@ namespace PanettoneGames
             }
             catch (Exception e) { Debug.LogError($"Unable to read temporary files due to unsufficient User Priviliges. Please contact your system administrator. \nDetails: {e.Message}"); }
 
+        }
+
+        private string GetAppPath(RuntimePlatform currentPlatform)
+        {
+            switch (currentPlatform)
+            {
+                case RuntimePlatform.WindowsEditor:
+                    return EditorApplication.applicationPath;
+                case RuntimePlatform.OSXEditor:
+                    return EditorApplication.applicationPath + "/Contents/MacOS/Unity";
+                case RuntimePlatform.LinuxEditor:
+                    return EditorApplication.applicationPath;
+                default:
+                    throw new NotImplementedException("Platform not supported!");
+            }
         }
 
         private static void ClearClient(string destPath)
