@@ -156,6 +156,7 @@ namespace PanettoneGames
                     EditorUtility.ClearProgressBar();
                     Debug.Log("MultiPlay: References cleared successfully");
                     RemoveFromHub();
+                    window?.Repaint();
                     EditorUtility.DisplayDialog("Success", "All Clear!", "OK");
                 }
                 catch (Exception e) { Debug.LogError(e.Message); }
@@ -174,6 +175,9 @@ namespace PanettoneGames
             return !Application.isPlaying && !isClient;
         }
 
+
+        [MenuItem("Tools/" + licenseMenuCaption + "/Rate Please :)", false, 30)]
+        public static void MenuRate() => Application.OpenURL($"https://assetstore.unity.com/packages/tools/utilities/multiplay-multiplayer-testing-without-builds-170209?aid=1011lds77&utm_source=aff#reviews");
 
         [MenuItem("Tools/" + licenseMenuCaption + "/Help", false, 30)]
         public static void MenuHelp()
@@ -248,6 +252,7 @@ namespace PanettoneGames
             SaveSettings();
             EditorApplication.update -= OnEditorUpdate;
             EditorApplication.playModeStateChanged -= HandleOnPlayModeChanged;
+            
         }
 
         private void OnDestroy()
@@ -278,9 +283,6 @@ namespace PanettoneGames
             multiPlaySettingsAsset.maxNumberOfClients = maxNumberOfClients;
             multiPlaySettingsAsset.copyLibrary = copyLibrary;
         }
-
-
-
 
 
         private void HandleOnPlayModeChanged(PlayModeStateChange obj)
