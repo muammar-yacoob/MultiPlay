@@ -1,14 +1,10 @@
-﻿/////////////////////////////////// 
-/////////////////////////////////// 
-//////////////////  All rights reserved By Muammar.Yacoob@gmail.com
-//////////////////  MultiPlay/Dual Play Unity Editor Extension 2020
-//////////////////  Version 1.3.1
-///#if Unity_Editor
-/// - try catch blocks are added to identify nature of the error in the console log
-//  - links args are /j but in case of failure, try /d or else a simple xcopy for the failed folder
-/////////////////////////////////// 
-/////////////////////////////////// 
-/////////////////////////////////// 
+﻿//////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+//////////////////  All rights reserved By Muammar.Yacoob@gmail.com //////////////////
+//////////////////  MultiPlay/Dual Play Unity Editor Extension 2020///////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+
 
 using Microsoft.Win32;
 using System;
@@ -93,12 +89,11 @@ namespace PanettoneGames
 
         #endregion
         #region License Setup
-        private const Licence productLicence = Licence.Full; //change here only
-        private const string licenseMenuCaption = productLicence == Licence.Default? "MultiPlay":"DualPlay";   
+        private const Licence productLicence = Licence.Full; 
+        private const string licenseMenuCaption = productLicence == Licence.Full? "MultiPlay":"DualPlay";   
         #endregion
 
         #region menus
-
         [MenuItem("Tools/" + licenseMenuCaption + "/Client Manager &C", false, 10)]
 
         public static void OpenWindow()
@@ -264,7 +259,7 @@ namespace PanettoneGames
             {
                 clonesPath = multiPlaySettingsAsset.clonesPath;
             }
-            maxNumberOfClients = multiPlaySettingsAsset.maxNumberOfClients;
+            maxNumberOfClients = productLicence == Licence.Default? 1 : multiPlaySettingsAsset.maxNumberOfClients;
             copyLibrary = multiPlaySettingsAsset.copyLibrary;
 
             if (string.IsNullOrEmpty(clonesPath))
@@ -507,58 +502,62 @@ namespace PanettoneGames
                     GUI.enabled = true;
                 }
 
-                showSettings = EditorGUILayout.BeginFoldoutHeaderGroup(showSettings, "Settings");//, skin.GetStyle("PanHeaderDefault"));
-                if (showSettings)
+                if (productLicence == Licence.Full)
                 {
-                    try
+                    showSettings = EditorGUILayout.BeginFoldoutHeaderGroup(showSettings, "Settings");//, skin.GetStyle("PanHeaderDefault"));
+                    if (showSettings)
                     {
-
-                        EditorGUILayout.Space(5);
-                        GUILayout.BeginVertical();
-                        GUILayout.BeginHorizontal();
-
-                        maxNumberOfClients = EditorGUILayout.IntField(new GUIContent("Max Clients:", $"Maximum number of allowed clients is {maxClientsHardLimit}"), Mathf.Clamp(maxNumberOfClients, 1, maxClientsHardLimit));
-                        maxNumberOfClients = Mathf.Clamp(maxNumberOfClients, 1, maxClientsHardLimit);
-                        EditorGUILayout.Space(20);
-
-                        copyLibrary = GUILayout.Toggle(copyLibrary, "Link Library");
-                        GUILayout.EndHorizontal();
-
-                        clonesPath = EditorGUILayout.TextField(new GUIContent("Clones Path:", "Default Path of project clones"), clonesPath);
-                        if (GUILayout.Button("Browse", GUILayout.Height(25)))
+                        try
                         {
-                            string path = EditorUtility.OpenFolderPanel("Select Clones Folder", clonesPath, "");
-                            if (path.Length != 0)
+
+                            EditorGUILayout.Space(5);
+                            GUILayout.BeginVertical();
+                            GUILayout.BeginHorizontal();
+
+                            maxNumberOfClients = EditorGUILayout.IntField(new GUIContent("Max Clients:", $"Maximum number of allowed clients is {maxClientsHardLimit}"), Mathf.Clamp(maxNumberOfClients, 1, maxClientsHardLimit));
+                            maxNumberOfClients = Mathf.Clamp(maxNumberOfClients, 1, maxClientsHardLimit);
+                            EditorGUILayout.Space(20);
+
+                            copyLibrary = GUILayout.Toggle(copyLibrary, "Link Library");
+                            GUILayout.EndHorizontal();
+
+                            clonesPath = EditorGUILayout.TextField(new GUIContent("Clones Path:", "Default Path of project clones"), clonesPath);
+                            if (GUILayout.Button("Browse", GUILayout.Height(25)))
                             {
-                                clonesPath = path.Replace('/', '\\');
-                                Repaint();
+                                string path = EditorUtility.OpenFolderPanel("Select Clones Folder", clonesPath, "");
+                                if (path.Length != 0)
+                                {
+                                    clonesPath = path.Replace('/', '\\');
+                                    Repaint();
+                                }
                             }
+
+                            //GUI.Label(new Rect(10, 200, 100, 40), GUI.tooltip); //another way to display the tool tip
+                            string libraryTip = (copyLibrary) ? $"including Library link. i.e. faster but may break some 3rd party packages (recommended for most small projects)" : "excluding Library link. i.e. project configuration and packages will be stored separately at an extra disk cost and Auty Sync feature is disabled";
+                            var msgType = (copyLibrary) ? MessageType.Warning : MessageType.Info;
+
+                            EditorGUILayout.HelpBox($"New clients will be created in [{new DirectoryInfo(clonesPath).Name}] {libraryTip}.", msgType);
+
+
+                            //GUILayout.Space(10);
+                            GUILayout.EndVertical();
+
                         }
-
-                        //GUI.Label(new Rect(10, 200, 100, 40), GUI.tooltip); //another way to display the tool tip
-                        string libraryTip = (copyLibrary) ? $"including Library link. i.e. faster but may break some 3rd party packages (recommended for most small projects)" : "excluding Library link. i.e. project configuration and packages will be stored separately at an extra disk cost and Auty Sync feature is disabled";
-                        var msgType = (copyLibrary) ? MessageType.Warning : MessageType.Info;
-
-                        EditorGUILayout.HelpBox($"New clients will be created in [{new DirectoryInfo(clonesPath).Name}] {libraryTip}.", msgType);
-
-                        #region store link inside settings
-                        GUILayout.Space(10);
-
-
-                        if (GUILayout.Button("More cool tools...", skin.GetStyle("PanStoreLink")))
-                        {
-                            Application.OpenURL($"https://assetstore.unity.com/publishers/" + myPubID);
-                            Application.OpenURL($"https://panettonegames.com/");
-                        }
-                        GUILayout.Space(5);
-                        #endregion
-
-                        GUILayout.EndVertical();
-
+                        catch (Exception e) { Debug.LogError(e.Message); }
                     }
-                    catch (Exception e) { Debug.LogError(e.Message); }
                 }
 
+                #region store link inside settings
+                
+
+
+                if (GUILayout.Button("More cool tools...", skin.GetStyle("PanStoreLink")))
+                {
+                    Application.OpenURL($"https://assetstore.unity.com/publishers/" + myPubID);
+                    Application.OpenURL($"https://panettonegames.com/");
+                }
+                //GUILayout.Space(5);
+                #endregion
                 GUILayout.EndVertical();
                 GUILayout.EndArea();
             }
@@ -827,7 +826,9 @@ namespace PanettoneGames
             {
                 Process process = new Process();
                 ProcessStartInfo startInfo = new ProcessStartInfo();
-                startInfo.WindowStyle = ProcessWindowStyle.Maximized;
+                bool isCleaningUp = args.StartsWith("/c rd");
+                startInfo.WindowStyle = isCleaningUp? ProcessWindowStyle.Hidden : ProcessWindowStyle.Maximized;
+
                 startInfo.FileName = prog;
                 startInfo.Arguments = args;
                 string tmp = prog + args;

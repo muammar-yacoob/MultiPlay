@@ -1,9 +1,7 @@
 {
     "name": "MultiPlay",
     "rootNamespace": "",
-    "references": [
-        ""
-    ],
+    "references": [],
     "includePlatforms": [
         "Editor"
     ],
