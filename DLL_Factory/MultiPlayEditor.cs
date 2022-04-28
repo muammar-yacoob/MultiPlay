@@ -1,11 +1,11 @@
 ﻿/////////////////////////////////// 
 /////////////////////////////////// 
-//////////////////  All rights reserved By Muammar.Yacoob@Gmail.com
+//////////////////  All rights reserved By Muammar.Yacoob@gmail.com
 //////////////////  MultiPlay/Dual Play Unity Editor Extension 2020
 //////////////////  Version 1.3.1
 ///#if Unity_Editor
 /// - try catch blocks are added to identify nature of the error in the console log
-//  - links args are /j but in case of faiur, try /d or else a simple xcopy for the failed folder
+//  - links args are /j but in case of failure, try /d or else a simple xcopy for the failed folder
 /////////////////////////////////// 
 /////////////////////////////////// 
 /////////////////////////////////// 
@@ -25,23 +25,23 @@ using Debug = UnityEngine.Debug;
 
 namespace PanettoneGames
 {
-
-
-    public class MultiPlay : UnityEditor.EditorWindow
+    [InitializeOnLoad]
+    public class MultiPlayEditor : UnityEditor.EditorWindow
     {
         #region privateMembers
         private string sourcePath;
-        private static string destinationPath_1;
-        private static string destinationPath_2;
-        private static string destinationPath_3;
+
         private string destinationPath_default;
-        private string btnCaption_1;
-        private string btnCaption_2;
-        private string btnCaption_3;
         private string btnCaption_default;
+
+        //Format
         private Texture2D bgTexture;
         private Texture2D headerTexture;
         private Texture2D bodyTexture;
+        private const int windowMinWidth = 180;
+        private const int windowMinHeight = 180;
+        private const int windowMaxWidthExpanded = 420;
+        private const int windowMinHeightExpanded = 320;
 
         private Color bgColor;
         private Color headerColor;
@@ -53,6 +53,7 @@ namespace PanettoneGames
 
         private float headerTexScale = 0.20f;
         private GUISkin skin;
+        private Texture2D playTexture;
         private float pad = 5f;
 
         private bool isCreatingReferences;
@@ -65,41 +66,58 @@ namespace PanettoneGames
         private string sceneFilePath;
         private DateTime lastSyncTime;
         private DateTime lastWriteTime;
-        private bool autoSync;
+        private static bool autoSync;
 
         private Int32 clientIndex;
-        private static Licence productLicence;
         private string headerText;
         private GUIStyle headerStyle;
+        private Color defaultFontColor;
         private string clientHeaderText;
 
         private static string myPubID = "46749";
         private float timer;
+        private Vector2 scrollPos;
+        private bool showSettings;
+        private static MultiPlayEditor window;
 
+        //Settings: Hard coded
+        private MultiPlaySettings multiPlaySettingsAsset;
+        private int maxClientsHardLimit = 30; //ceiling
+
+        //Settings Preferences
+        private static int maxNumberOfClients;
+        private static string clonesPath;
+        private bool copyLibrary;
+        private bool hasLibrary;
+
+
+        #endregion
+        #region License Setup
+        private const Licence productLicence = Licence.Full; //change here only
+        private const string licenseMenuCaption = productLicence == Licence.Default? "MultiPlay":"DualPlay";   
+
+        public string LibraryPath { get; private set; }
         #endregion
 
         #region menus
 
-        //[MenuItem("Tools/DualPlay/Client Manager &C", false, 10)] //<<<<<<<<<<<<<<<<<<<   1
-        [MenuItem("Tools/MultiPlay/Client Manager &C", false, 10)] //<<<<<<<<<<<<<<<<<<<
+        [MenuItem("Tools/" + licenseMenuCaption + "/Client Manager &C", false, 10)]
 
         public static void OpenWindow()
         {
             try
             {
-                productLicence = Licence.Full; //<<<<<<<<<<<<<<<<<<<   2
                 string windowTitle = (productLicence == Licence.Full) ? "MultiPlay" : "DualPlay";
-                MultiPlay window;
                 if (isClient)
                 {
-                    window = GetWindow<MultiPlay>(windowTitle, typeof(SceneView));
-                    window.minSize = new Vector2(180, 100);
+                    window = GetWindow<MultiPlayEditor>(windowTitle, typeof(SceneView));
+                    window.minSize = new Vector2(windowMinWidth, windowMinHeight);
                 }
                 else
                 {
-                    window = GetWindow<MultiPlay>(windowTitle, typeof(SceneView));
-                    window.minSize = new Vector2(180, 165);
-                    window.maxSize = new Vector2(180, 165);
+                    window = GetWindow<MultiPlayEditor>(windowTitle, typeof(SceneView));
+                    window.minSize = new Vector2(windowMinWidth, windowMinHeight);
+                    window.maxSize = new Vector2(350, windowMinHeight * 1.5f);
                 }
 
                 window.Show();
@@ -108,15 +126,17 @@ namespace PanettoneGames
         }
 
 
-        //[MenuItem("Tools/DualPlay/Clean Up", false, 11)]//<<<<<<<<<<<<<<<<<<<    3
-        [MenuItem("Tools/MultiPlay/Clean Up", false, 11)]//<<<<<<<<<<<<<<<<<<<    
+
+        [MenuItem("Tools/" + licenseMenuCaption + "/Clean Up", false, 11)]
         static void Menu_Cleanup()
         {
-            string msg = "Clearing cached references to all clients, are you sure you want to proceed?";
+            int clientsFound = DoLinksExist();
+
+            string msg = $"Clearing cached references to {clientsFound} clients, are you sure you want to proceed?";
 
 
-            if (!DoLinksExist())
-                msg = "No Clients found, Do you want to try clear references anyway?";
+            if (clientsFound == 0)
+                msg = $"No Clients were found in {clonesPath}, Try clear references anyway?";
 
             if (DoLinksLive())
             {
@@ -129,22 +149,21 @@ namespace PanettoneGames
                 try
                 {
                     Debug.Log("Cleaning cache...");
+                    EditorUtility.DisplayProgressBar("Processing..", "Shows a progress", 0.9f);
                     PurgeAllClients();
+                    EditorUtility.ClearProgressBar();
                     Debug.Log("MultiPlay: References cleared successfully");
                     RemoveFromHub();
+                    window?.Repaint();
                     EditorUtility.DisplayDialog("Success", "All Clear!", "OK");
                 }
                 catch (Exception e) { Debug.LogError(e.Message); }
             }
-
-
-
         }
 
 
-        //[MenuItem("Tools/DualPlay/Clean Up", true, 11)]//<<<<<<<<<<<<<<<<<<<    4
-        [MenuItem("Tools/MultiPlay/Clean Up", true, 11)]//<<<<<<<<<<<<<<<<<<<    
 
+        [MenuItem("Tools/" + licenseMenuCaption + "/Clean Up", true, 11)]
         static bool Validate_Menu_Cleanup()
         {
             int cnt = Application.dataPath.Split('/').Length;
@@ -155,10 +174,10 @@ namespace PanettoneGames
         }
 
 
+        [MenuItem("Tools/" + licenseMenuCaption + "/Rate Please :)", false, 30)]
+        public static void MenuRate() => Application.OpenURL($"https://assetstore.unity.com/packages/tools/utilities/multiplay-multiplayer-testing-without-builds-170209?aid=1011lds77&utm_source=aff#reviews");
 
-
-        //[MenuItem("Tools/DualPlay/Help", false, 30)] //<<<<<<<<<<<<<<<<<<<      5  
-        [MenuItem("Tools/MultiPlay/Help", false, 30)] //<<<<<<<<<<<<<<<<<<<        
+        [MenuItem("Tools/" + licenseMenuCaption + "/Help", false, 30)]
         public static void MenuHelp()
         {
             Application.OpenURL(@"https://panettonegames.com/");
@@ -168,50 +187,33 @@ namespace PanettoneGames
             Application.OpenURL(helpFilePath);
             Application.OpenURL($"https://assetstore.unity.com/publishers/" + myPubID);
         }
-
-
-
         #endregion
 
+        private void Awake() => InitializeTextures();
         private void OnEnable()
         {
             try
             {
-                productLicence = Licence.Full; //<<<<<<<<<<<<<<<<<<< 6 Last
+                EditorApplication.playModeStateChanged += HandleOnPlayModeChanged;
 
                 sceneFilePath = Application.dataPath + "/../" + SceneManager.GetActiveScene().path;
                 sceneFilePath = sceneFilePath.Replace(@"/", @"\");
 
                 isCreatingReferences = false;
 
-                // headerColor = new Color(0, 0, 0);
-
+                //headerColor = new Color(0, 0, 0);
 
                 sourcePath = $"{ Application.dataPath }/..";
                 sourcePath = sourcePath.Replace(@"/", @"\");
 
-                //destinationPath = $"{ Application.dataPath }/../../{Application.productName}Client";
-                //Debug.Log(destinationPath);
-
-
-                //MultiPlay Clients
-                destinationPath_1 = $"{ Application.persistentDataPath }/../../{Application.productName}_[1]___Client".Replace(@"/", @"\");
-                destinationPath_2 = $"{ Application.persistentDataPath }/../../{Application.productName}_[2]___Client".Replace(@"/", @"\");
-                destinationPath_3 = $"{ Application.persistentDataPath }/../../{Application.productName}_[3]___Client".Replace(@"/", @"\");
-                destinationPath_default = $"{ Application.persistentDataPath }/../../{Application.productName}___Client".Replace(@"/", @"\");
-
-                btnCaption_1 = Directory.Exists(destinationPath_1) ? $"Launch Client [1]" : $"Create Client [1]";
-                btnCaption_2 = Directory.Exists(destinationPath_2) ? $"Launch Client [2]" : $"Create Client [2]";
-                btnCaption_3 = Directory.Exists(destinationPath_3) ? $"Launch Client [3]" : $"Create Client [3]";
-                btnCaption_default = Directory.Exists(destinationPath_default) ? $"Launch Client" : $"Create Client";
 
                 headerText = (productLicence == Licence.Full) ? "MultiPlay" : "DualPlay";
                 headerStyle = (productLicence == Licence.Full) ? skin.GetStyle("PanHeaderFull") : skin.GetStyle("PanHeaderDefault");
 
+                defaultFontColor = GUI.contentColor;
+
                 //bgColor = (productLicence == Licence.Full) ? new Color(1f, 1f, 1f) : new Color(0.2f, 0.2f, 0.2f);
                 //bodyColor = (productLicence == Licence.Full) ? new Color(1f, 0.6f, 0.3f) : new Color(0.5f, 0.75f, 1);
-
-
 
                 int cnt = Application.dataPath.Split('/').Length;
                 string appFolderName = Application.dataPath.Split('/')[cnt - 2];
@@ -219,6 +221,7 @@ namespace PanettoneGames
                 if (isClient)
                 {
                     bool indexHasParsed = Int32.TryParse(appFolderName.Substring(appFolderName.IndexOf('[') + 1, 1), out clientIndex);
+                    LibraryPath = Application.dataPath + "/../Library";
                 }
 
                 clientHeaderText = (productLicence == Licence.Full) ? $"Client [{clientIndex}]" : $"Client";
@@ -234,17 +237,65 @@ namespace PanettoneGames
                 RemoveFromHub();
                 //Debug.Log($"lastWrite: {lastWriteTime}, lastSync: {lastSyncTime}");
                 EditorApplication.update += OnEditorUpdate;
+
+                multiPlaySettingsAsset = Resources.Load<MultiPlaySettings>("settings/MultiPlaySettings");//there's already one scriptable object asset provided and you don't actually need to create another one, just find it and change its variables
+                InitialiseSettings();
             }
-            catch (Exception e) { Debug.LogError($"{e.Message}"); }
+            catch (Exception ex) { Debug.LogError($"{ex.Message}"); }
 
         }
-        protected virtual void OnDisable() => EditorApplication.update -= OnEditorUpdate;
 
-        private void Awake()
+        protected virtual void OnDisable()
         {
-            InitializeTextures();
-
+            SaveSettings();
+            EditorApplication.update -= OnEditorUpdate;
+            EditorApplication.playModeStateChanged -= HandleOnPlayModeChanged;
+            
         }
+
+        private void OnDestroy()
+        {
+            SaveSettings();
+            EditorApplication.playModeStateChanged -= HandleOnPlayModeChanged;
+            EditorApplication.update -= OnEditorUpdate;
+        }
+
+        private void InitialiseSettings()
+        {
+            if (string.IsNullOrEmpty(clonesPath))
+            {
+                clonesPath = multiPlaySettingsAsset.clonesPath;
+            }
+            maxNumberOfClients = multiPlaySettingsAsset.maxNumberOfClients;
+            copyLibrary = multiPlaySettingsAsset.copyLibrary;
+
+            if (string.IsNullOrEmpty(clonesPath))
+            {
+                clonesPath = clonesPath.Replace(@"/", @"\");
+            }
+        }
+
+        private void SaveSettings()
+        {
+            multiPlaySettingsAsset.clonesPath = clonesPath;
+            multiPlaySettingsAsset.maxNumberOfClients = maxNumberOfClients;
+            multiPlaySettingsAsset.copyLibrary = copyLibrary;
+        }
+
+
+        private void HandleOnPlayModeChanged(PlayModeStateChange obj)
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode && isClient && !autoSync)
+            {
+                //CheckIfSceneChanged();
+                //if (hasChanged)
+                {
+                    ReloadScene();
+                    hasChanged = false;
+                }
+            }
+        }
+
 
         private void OnEditorUpdate()
         {
@@ -256,14 +307,38 @@ namespace PanettoneGames
             try
             {
                 lastWriteTime = File.GetLastWriteTime(sceneFilePath);
-                if (lastWriteTime > lastSyncTime)
+                if (lastWriteTime > lastSyncTime) //scene changed
                 {
+
                     if (autoSync)
                     {
-                        if (clientIndex > 1) System.Threading.Thread.Sleep(clientIndex * 600); //<<<<<<<<<<<<<<<<<<<<<<<<<<<< induce some delay here
-                        ReloadScene();
+
+
+
+                        try
+                        {
+                            //if (clientIndex > 1)
+                            {
+                                //Debug.Log("Lib: " + copyLibrary + ". Refreshing...");
+                                System.Threading.Thread.Sleep(clientIndex * 50); //<< inducing some delay here to prevent Editor crashing
+
+                                hasChanged = false;
+                                lastSyncTime = DateTime.Now;
+                            }
+                            ReloadScene();
+
+                        }
+                        catch (Exception)
+                        {
+                            if (autoSync)
+                            {
+                                Debug.LogError("Error reloading Scene. Switching to Manual Sync...");
+                                autoSync = false;
+                            }
+                        }
                     }
-                    else hasChanged = true;
+                    hasChanged = false;
+
                     //Debug.LogWarning($"Changes made on {lastWriteTime}. Make sure to Sync before running the game");
                     Repaint();
                 }
@@ -271,21 +346,6 @@ namespace PanettoneGames
             catch (Exception e) { Debug.LogError($"{e.Message}"); }
         }
 
-        /*
-     private void Update() //unnecessary for updates but i'm trying to use it to induce delay between clients scene upload
-     {
-         if (isClient)
-         {
-             timer += Time.deltaTime;
-             if (timer >= clientIndex)
-             {
-                 timer = 0;
-                 Debug.Log("Time to refresh");
-             }
-         }
-     }
-     private bool TimeToCheck() => ((Time.realtimeSinceStartup > nextSync));
-     */
 
         private void InitializeTextures()
         {
@@ -312,14 +372,8 @@ namespace PanettoneGames
 
         private void DrawLayout()
         {
-            #region formatting
+            #region Header Formatting
 
-            btnCaption_1 = Directory.Exists(destinationPath_1) ? $"Launch Client [1]" : $"Create Client [1]";
-            btnCaption_2 = Directory.Exists(destinationPath_2) ? $"Launch Client [2]" : $"Create Client [2]";
-            btnCaption_3 = Directory.Exists(destinationPath_3) ? $"Launch Client [3]" : $"Create Client [3]";
-            btnCaption_default = Directory.Exists(destinationPath_default) ? $"Launch Client" : $"Create Client";
-
-            //bg
             if (bgTexture == null || headerTexture == null || skin == null)
                 InitializeTextures();
 
@@ -334,27 +388,35 @@ namespace PanettoneGames
             bodyRect = new Rect(pad, headerRect.height + pad, Screen.width - pad * 2, Screen.height - headerRect.height - pad * 2);
             GUI.DrawTexture(bodyRect, bodyTexture);
 
+            #region Draw Header
             GUILayout.BeginArea(fullRect);
-
-
-
             if (isClient)
-
                 GUILayout.Label(clientHeaderText, headerStyle);
             else
                 GUILayout.Label(headerText, headerStyle);
             GUILayout.EndArea();
-
-
-            GUILayout.BeginArea(bodyRect);
-            GUILayout.Space(10);
-
             #endregion
-            GUILayout.BeginVertical();
+            #endregion
 
-
-            if (isClient)
+            #region EditorPlaying
+            if (EditorApplication.isPlaying)
             {
+                GUILayout.BeginArea(bodyRect);
+                EditorGUILayout.HelpBox($"Control panel is disabled while playing.", MessageType.Info);
+                ShowNotification(new GUIContent("Playing..."), 1);
+                if (GUILayout.Button("More cool tools...", skin.GetStyle("PanStoreLink")))
+                {
+                    Application.OpenURL($"https://assetstore.unity.com/publishers/" + myPubID);
+                    Application.OpenURL($"https://panettonegames.com/");
+                }
+                GUILayout.EndArea();
+                return;
+            }
+            #endregion
+
+            if (isClient) //Client
+            {
+                GUILayout.BeginArea(bodyRect);
                 if (GUILayout.Button("Sync"))
                 {
                     hasChanged = false;
@@ -362,198 +424,199 @@ namespace PanettoneGames
                     ShowNotification(new GUIContent("Syncing..."));
                     ReloadScene();
                 }
+
+                hasLibrary = !IsSymbolic(LibraryPath);
+                string autoSyncCaption = !hasLibrary ? "Auto Sync" : "Auto Sync - Client created without [Link Library]";
+                GUI.enabled = !hasLibrary;
+                autoSync = GUILayout.Toggle(!hasLibrary ? autoSync : false, autoSyncCaption);
+                GUI.enabled = true;
+
+                if (hasChanged) EditorGUILayout.HelpBox("Changes from original build were detected. Make sure to Sync before running", MessageType.Warning);
+                else EditorGUILayout.HelpBox($"You're Good to Go!\nLast Changed:\t{lastWriteTime}\nLast Synced:\t{lastSyncTime}", MessageType.Info);
+
+                if (GUILayout.Button("More cool tools...", skin.GetStyle("PanStoreLink")))
+                {
+                    Application.OpenURL($"https://assetstore.unity.com/publishers/" + myPubID);
+                    Application.OpenURL($"https://panettonegames.com/");
+                }
+                GUILayout.EndArea();
+
             }
 
             else //Original Copy
             {
+                GUILayout.BeginArea(bodyRect);////////////////////1
+                GUILayout.BeginVertical();//////////////2
+
                 if (isCreatingReferences)
                 {
                     isCreatingReferences = false;
                     ShowNotification(new GUIContent("Creating Client..."));
                 }
                 else //Create References Or Launch
-
                 {
-                    if (productLicence == Licence.Full)
+                    scrollPos = EditorGUILayout.BeginScrollView(scrollPos, GUILayout.ExpandWidth(true), GUILayout.Height(90));
+
+                    for (int i = 1; i < maxNumberOfClients + 1; i++)
                     {
-                        #region Full Version
-                        //Client [1]
-                        GUI.enabled = !Directory.Exists(destinationPath_1 + "\\Temp");
+                        string destinationPath = $"{ clonesPath }/{Application.productName}_[{i}]___Client".Replace(@"/", @"\");
+                        string btnCaption = Directory.Exists(destinationPath) ? $"Launch Client [{i}]" : $"Create Client [{i}]";
+                        GUI.enabled = !Directory.Exists(destinationPath + "\\Temp");
 
-
-                        if (GUILayout.Button(btnCaption_1, GUILayout.Height(25)))
+                        GUILayout.BeginHorizontal();
+                        if (Directory.Exists(destinationPath)) GUI.contentColor = Color.green;
+                        if (GUILayout.Button(btnCaption, GUILayout.Height(25)))
                         {
+                            Debug.Log($"creating Client {i} in {destinationPath.Replace("\\\\", "\\")}");
+
+                            /////////////
                             EditorSceneManager.SaveScene(SceneManager.GetActiveScene());
-                            if (!Directory.Exists(destinationPath_1))
+                            if (!Directory.Exists(destinationPath))
                             {
                                 isCreatingReferences = false;
-                                CreateLink(destinationPath_1, "Assets");
-                                CreateLink(destinationPath_1, "ProjectSettings");
-                                CreateLink(destinationPath_1, "Packages");
-                                //CreateLink(destinationPath_1, "Library"); //kills auto sync.
+                                CreateLink(destinationPath, "Assets");
+                                CreateLink(destinationPath, "ProjectSettings");
+                                CreateLink(destinationPath, "Packages");
+
+                                if (copyLibrary)
+                                    CreateLink(destinationPath, "Library"); //kills auto sync.
                             }
 
 
                             EditorSceneManager.SaveScene(SceneManager.GetActiveScene());
                             hasChanged = false;
-                            LaunchClient(destinationPath_1);
+                            LaunchClient(destinationPath);
                             RemoveFromHub();
                             //Close();
+
+                            GUI.enabled = true;
+                            ///
                         }
-                        GUI.enabled = true;
-
-
-                        //Client [2]
-                        GUI.enabled = !Directory.Exists(destinationPath_2 + "\\Temp");
-                        if (GUILayout.Button(btnCaption_2, GUILayout.Height(25)))
+                        if (Directory.Exists(destinationPath))
                         {
-                            EditorSceneManager.SaveScene(SceneManager.GetActiveScene());
-                            if (!Directory.Exists(destinationPath_2))
+                            GUI.contentColor = Color.red;
+                            if (GUILayout.Button("X", GUILayout.Height(25), GUILayout.Width(25)))
                             {
-                                isCreatingReferences = false;
-                                CreateLink(destinationPath_2, "Assets");
-                                CreateLink(destinationPath_2, "ProjectSettings");
-                                CreateLink(destinationPath_2, "Packages");
-                                //CreateLink(destinationPath_2, "Library"); //kills auto sync.
+                                Debug.Log($"Deleting [{new DirectoryInfo(destinationPath).Name}]");
+                                ClearClient(destinationPath);
                             }
-
-
-                            EditorSceneManager.SaveScene(SceneManager.GetActiveScene());
-                            hasChanged = false;
-                            LaunchClient(destinationPath_2);
-                            RemoveFromHub();
-                            //Close();
                         }
-                        GUI.enabled = true;
-
-                        //Client [3]
-                        GUI.enabled = !Directory.Exists(destinationPath_3 + "\\Temp");
-                        if (GUILayout.Button(btnCaption_3, GUILayout.Height(25)))
-                        {
-                            EditorSceneManager.SaveScene(SceneManager.GetActiveScene());
-                            if (!Directory.Exists(destinationPath_3))
-                            {
-                                isCreatingReferences = false;
-                                CreateLink(destinationPath_3, "Assets");
-                                CreateLink(destinationPath_3, "ProjectSettings");
-                                CreateLink(destinationPath_3, "Packages");
-                                //CopyStartupConfig(destinationPath_3);
-                                //CreateLink(destinationPath_3, "Library"); //kills auto sync.
-                            }
-
-
-                            EditorSceneManager.SaveScene(SceneManager.GetActiveScene());
-                            hasChanged = false;
-                            LaunchClient(destinationPath_3);
-                            RemoveFromHub();
-                            //Close();
-                        }
-                        GUI.enabled = true;
-
-                        #endregion
+                        GUILayout.EndHorizontal();
+                        GUI.contentColor = defaultFontColor;
                     }
-                    else
-                    {
-                        #region Default Version
-                        //Client Default
-                        GUI.enabled = !Directory.Exists(destinationPath_default + "\\Temp");
-                        if (GUILayout.Button(btnCaption_default, GUILayout.Height(25)))
-                        {
-                            EditorSceneManager.SaveScene(SceneManager.GetActiveScene());
-                            if (!Directory.Exists(destinationPath_default))
-                            {
-                                isCreatingReferences = false;
-                                CreateLink(destinationPath_default, "Assets");
-                                CreateLink(destinationPath_default, "ProjectSettings");
-                                CreateLink(destinationPath_default, "Packages");
-                                //CreateLink(destinationPath_default, "Library"); //kills auto sync.
-                            }
 
-
-                            EditorSceneManager.SaveScene(SceneManager.GetActiveScene());
-                            hasChanged = false;
-                            LaunchClient(destinationPath_default);
-                            RemoveFromHub();
-                            //Close();
-                        }
-                        GUI.enabled = true;
-                        #endregion
-                    }
+                    EditorGUILayout.EndScrollView();
+                    GUI.enabled = true;
                 }
 
-
-            }
-
-
-
-            GUILayout.EndVertical();
-            if (isClient) autoSync = GUILayout.Toggle(autoSync, "Auto Sync");
-
-            //if (GUILayout.Button("x")) RemoveFromHub();
-
-            if (isClient)
-            {
-                if (hasChanged) EditorGUILayout.HelpBox("Changes from original build were detected. Make sure to Sync before running", MessageType.Warning);
-                else EditorGUILayout.HelpBox($"You're Good to Go!\nLast Changed:\t{lastWriteTime}\nLast Synced:\t{lastSyncTime}", MessageType.Info);
-            }
-
-
-
-            if (productLicence == Licence.Default)
-            {
-                if (GUILayout.Button("More cool tools...", skin.GetStyle("PanStoreLink")))
+                showSettings = EditorGUILayout.BeginFoldoutHeaderGroup(showSettings, "Settings");//, skin.GetStyle("PanHeaderDefault"));
+                if (showSettings)
                 {
-                    Application.OpenURL($"https://assetstore.unity.com/publishers/" + myPubID);
-                    Application.OpenURL($"https://panettonegames.com/");
-                }
-            }
+                    try
+                    {
 
-            GUILayout.EndArea();
+                        EditorGUILayout.Space(5);
+                        GUILayout.BeginVertical();
+                        GUILayout.BeginHorizontal();
+
+                        maxNumberOfClients = EditorGUILayout.IntField(new GUIContent("Max Clients:", $"Maximum number of allowed clients is {maxClientsHardLimit}"), Mathf.Clamp(maxNumberOfClients, 1, maxClientsHardLimit));
+                        maxNumberOfClients = Mathf.Clamp(maxNumberOfClients, 1, maxClientsHardLimit);
+                        EditorGUILayout.Space(20);
+
+                        copyLibrary = GUILayout.Toggle(copyLibrary, "Link Library");
+                        GUILayout.EndHorizontal();
+
+                        clonesPath = EditorGUILayout.TextField(new GUIContent("Clones Path:", "Default Path of project clones"), clonesPath);
+                        if (GUILayout.Button("Browse", GUILayout.Height(25)))
+                        {
+                            string path = EditorUtility.OpenFolderPanel("Select Clones Folder", clonesPath, "");
+                            if (path.Length != 0)
+                            {
+                                clonesPath = path.Replace('/', '\\');
+                                Repaint();
+                            }
+                        }
+
+                        //GUI.Label(new Rect(10, 200, 100, 40), GUI.tooltip); //another way to display the tool tip
+                        string libraryTip = (copyLibrary) ? $"including Library link. i.e. faster but may break some 3rd party packages (recommended for most small projects)" : "excluding Library link. i.e. project configuration and packages will be stored separately at an extra disk cost and Auty Sync feature is disabled";
+                        var msgType = (copyLibrary) ? MessageType.Warning : MessageType.Info;
+
+                        EditorGUILayout.HelpBox($"New clients will be created in [{new DirectoryInfo(clonesPath).Name}] {libraryTip}.", msgType);
+
+                        #region store link inside settings
+                        GUILayout.Space(10);
+
+
+                        if (GUILayout.Button("More cool tools...", skin.GetStyle("PanStoreLink")))
+                        {
+                            Application.OpenURL($"https://assetstore.unity.com/publishers/" + myPubID);
+                            Application.OpenURL($"https://panettonegames.com/");
+                        }
+                        GUILayout.Space(5);
+                        #endregion
+
+                        GUILayout.EndVertical();
+
+                    }
+                    catch (Exception e) { Debug.LogError(e.Message); }
+                }
+
+                GUILayout.EndVertical();
+                GUILayout.EndArea();
+            }
         }
 
-        private static bool DoLinksExist()
+        private bool IsSymbolic(string path)
         {
+            FileInfo pathInfo = new FileInfo(path);
+            return pathInfo.Attributes.HasFlag(FileAttributes.ReparsePoint);
+        }
 
-            if (productLicence == Licence.Full)
-            {
-                return
-                    Directory.Exists(destinationPath_1) ||
-                    Directory.Exists(destinationPath_2) ||
-                    Directory.Exists(destinationPath_3);
+        private static int DoLinksExist()
+        {
+            int cnt = 0;
 
-            }
-            else //Dual Play
+            for (int i = 1; i < maxNumberOfClients + 1; i++)
             {
-                return
-                    Directory.Exists(destinationPath_1);
+                string destinationPath = $"{ clonesPath }/{Application.productName}_[{i}]___Client".Replace(@"/", @"\");
+                //if (i == 1) result = Directory.Exists(destinationPath);
+                //result = result || Directory.Exists(destinationPath);
+
+                if (Directory.Exists(destinationPath)) cnt++;
             }
+
+            return cnt;
         }
 
         private static bool DoLinksLive()
         {
-            if (productLicence == Licence.Full)
+            bool result = false;
+            for (int i = 1; i < maxNumberOfClients + 1; i++)
             {
-                return
-                    Directory.Exists(destinationPath_1 + "\\Temp") ||
-                    Directory.Exists(destinationPath_2 + "\\Temp") ||
-                    Directory.Exists(destinationPath_3 + "\\Temp");
-            }
-            else  //Dual Play
-            {
-                return
-                    Directory.Exists(destinationPath_1 + "\\Temp");
+                string destinationPath = $"{ clonesPath }/{Application.productName}_[{i}]___Client".Replace(@"/", @"\");
+                if (i == 1) result = Directory.Exists(destinationPath + "\\Temp");
 
+                result = result || Directory.Exists(destinationPath + "\\Temp");
             }
+
+            return result;
         }
+
         private static void ReloadScene()
         {
             try
             {
+                EditorSceneManager.OpenScene(SceneManager.GetActiveScene().path);
 
-                EditorSceneManager.OpenScene(SceneManager.GetActiveScene().path, OpenSceneMode.Single);
             }
-            catch (Exception ex)
-            { EditorUtility.DisplayDialog("Error Loading Scene", ex.Message, "Sync Manually"); }
+            catch (Exception)
+            {
+                if (autoSync)
+                {
+                    Debug.LogError("Error reloading Scene. Switching to Manual Sync...");
+                    autoSync = false;
+                }
+            }
         }
 
         private static void RemoveFromHub()
@@ -619,15 +682,33 @@ namespace PanettoneGames
         }
         private void CreateLink(string destPath, string subDirectory)
         {
-
             if (!Directory.Exists(destPath))
                 Directory.CreateDirectory(destPath);
 
-            string args = String.Empty;
+            string cmd, args = String.Empty;
             try
             {
-                args = $"/c mklink /j \"{destPath}\\{subDirectory}\" \"{sourcePath}\\{subDirectory}\"";
-                var thread = new Thread(delegate () { ExcuteCMD("cmd", args); });
+                switch (Application.platform)
+                {
+                    case RuntimePlatform.WindowsEditor:
+                        cmd = "cmd";
+                        args = $"/c mklink /j \"{destPath}\\{subDirectory}\" \"{sourcePath}\\{subDirectory}\"";
+                        break;
+
+                    case RuntimePlatform.OSXEditor:
+                    case RuntimePlatform.LinuxEditor:
+
+                        cmd = "/bin/bash";
+                        args = $"ln -s \"{destPath}\\{subDirectory}\" \"{sourcePath}\\{subDirectory}\"";
+                        args = "-c \"" + args + "\"";
+                        break;
+
+                    default:
+                        throw new NotImplementedException("Platform not supported!");
+                }
+
+
+                var thread = new Thread(delegate () { ExcuteCMD(cmd, args); });
                 thread.Start();
             }
             catch (Exception e)
@@ -649,6 +730,7 @@ namespace PanettoneGames
                         args = $"/c xcopy /s /y {sourcePath}\\{subDirectory} {destPath}\\{subDirectory}";
                         var thread = new Thread(delegate () { ExcuteCMD("cmd", args); });
                         thread.Start();
+                        ClearConsole();
                     }
                     catch (Exception exx)
                     {
@@ -666,7 +748,7 @@ namespace PanettoneGames
             try
             {
                 string currentUnityVersion = Application.unityVersion;
-                string editorPath = EditorApplication.applicationPath;
+                string editorPath = GetAppPath(Application.platform);
                 //string editorArgs = $" -disable-assembly-updater -silent-crashes -noUpm"; //-nographics
                 string editorArgs = String.Empty; //$" -disable-assembly-updater -silent-crashes";
                 string projectPath = $" -projectPath \"{destPath}\"";
@@ -676,9 +758,25 @@ namespace PanettoneGames
 
                 thread.Start();
                 //RemoveFromHub();
+                ClearConsole();
             }
             catch (Exception e) { Debug.LogError($"Unable to read temporary files due to unsufficient User Priviliges. Please contact your system administrator. \nDetails: {e.Message}"); }
 
+        }
+
+        private string GetAppPath(RuntimePlatform currentPlatform)
+        {
+            switch (currentPlatform)
+            {
+                case RuntimePlatform.WindowsEditor:
+                    return EditorApplication.applicationPath;
+                case RuntimePlatform.OSXEditor:
+                    return EditorApplication.applicationPath + "/Contents/MacOS/Unity";
+                case RuntimePlatform.LinuxEditor:
+                    return EditorApplication.applicationPath;
+                default:
+                    throw new NotImplementedException("Platform not supported!");
+            }
         }
 
         private static void ClearClient(string destPath)
@@ -690,7 +788,6 @@ namespace PanettoneGames
             Thread thread = null;
             try
             {
-
                 string args = $"/c rd /s /q \"{destPath}\"";
                 thread = new Thread(delegate () { ExcuteCMD("cmd", args); });
                 thread?.Start();
@@ -703,7 +800,7 @@ namespace PanettoneGames
             try
             {
                 var tmpPath = new DirectoryInfo( //Path.GetTempPath());
-                $"{ Application.persistentDataPath }/../../");
+                $"{ clonesPath }");
 
                 foreach (var d in tmpPath.EnumerateDirectories("*Client*"))
                 {
@@ -719,9 +816,15 @@ namespace PanettoneGames
         }
 
 
-
+        private static void ClearConsole()
+        {
+            var logEntries = System.Type.GetType("UnityEditor.LogEntries, UnityEditor.dll");
+            var clearMethod = logEntries.GetMethod("Clear", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public);
+            clearMethod.Invoke(null, null);
+        }
         static void ExcuteCMD(string prog, string args)
         {
+            if (prog == null) return;
             try
             {
                 Process process = new Process();
@@ -738,7 +841,7 @@ namespace PanettoneGames
 
                 process.Close();
             }
-            catch (Exception e) { Debug.LogError($"Error excuting command\n{prog} {args}\n{e.Message}"); }
+            catch (Exception) { }
             finally { RemoveFromHub(); }
 
         }
@@ -747,9 +850,6 @@ namespace PanettoneGames
         { yield return new WaitForSeconds(timer); }
 
         private enum Licence { Default, Full }
-
     }
-
-
 }
 

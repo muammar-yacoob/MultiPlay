@@ -89,16 +89,12 @@ namespace PanettoneGames
         private static string clonesPath;
         private bool copyLibrary;
         private bool hasLibrary;
-
+		public string LibraryPath { get; private set; }
 
         #endregion
         #region License Setup
-        private const Licence productLicence = Licence.Full;
-        private const string licenseMenuCaption = "MultiPlay";   //Comment/Uncomment this 
-
-        public string LibraryPath { get; private set; }
-
-        //const string licenseMenuCaption = "DualPlay";          //Comment/Uncomment this
+        private const Licence productLicence = Licence.Full; //change here only
+        private const string licenseMenuCaption = productLicence == Licence.Default? "MultiPlay":"DualPlay";   
         #endregion
 
         #region menus
