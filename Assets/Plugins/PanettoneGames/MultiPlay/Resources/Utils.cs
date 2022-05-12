@@ -1,11 +1,9 @@
 using UnityEngine;
 
-namespace PanettoneGames.MultiPlay
+namespace MultiPlay
 {
     public class Utils
     {
-        #region Extensions
-
         public static int GetCurrentClientIndex()
         {
             int clientIndex = 0;
@@ -14,8 +12,6 @@ namespace PanettoneGames.MultiPlay
             bool isClient;
 
             isClient = appFolderName.EndsWith("___Client");
-
-
             if (isClient)
             {
                 clientIndex = 1;
@@ -26,10 +22,7 @@ namespace PanettoneGames.MultiPlay
                     appFolderName.IndexOf('[') + 1, 1), out clientIndex);
                 }
             }
-
             return clientIndex;
         }
-
-        #endregion
     }
 }

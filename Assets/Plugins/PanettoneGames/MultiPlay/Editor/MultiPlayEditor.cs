@@ -1,12 +1,4 @@
-﻿//////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////
-//////////////////  All rights reserved By Muammar.Yacoob@gmail.com //////////////////
-//////////////////  MultiPlay/Dual Play Unity Editor Extension 2020///////////////////
-//////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////
-
-
-using Microsoft.Win32;
+﻿using Microsoft.Win32;
 using System;
 using System.Collections;
 using System.Diagnostics;
@@ -19,16 +11,13 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using Debug = UnityEngine.Debug;
 
-namespace PanettoneGames
+namespace MultiPlay.Editor
 {
     [InitializeOnLoad]
     public class MultiPlayEditor : UnityEditor.EditorWindow
     {
         #region privateMembers
         private string sourcePath;
-
-        private string destinationPath_default;
-        private string btnCaption_default;
 
         //Format
         private Texture2D bgTexture;
@@ -40,7 +29,6 @@ namespace PanettoneGames
         private const int windowMinHeightExpanded = 320;
 
         private Color bgColor;
-        private Color headerColor;
         private Color bodyColor;
 
         private Rect fullRect;
@@ -49,16 +37,11 @@ namespace PanettoneGames
 
         private float headerTexScale = 0.20f;
         private GUISkin skin;
-        private Texture2D playTexture;
         private float pad = 5f;
 
         private bool isCreatingReferences;
         private bool hasChanged;
-        private string sceneStatus;
         private static bool isClient;
-        private float syncTimer;
-        private int syncDelay = 1;
-        private float nextSync;
         private string sceneFilePath;
         private DateTime lastSyncTime;
         private DateTime lastWriteTime;
@@ -78,7 +61,7 @@ namespace PanettoneGames
 
         //Settings: Hard coded
         private MultiPlaySettings multiPlaySettingsAsset;
-        private int maxClientsHardLimit = 30; //ceiling
+        private int maxClientsHardLimit = 30; 
 
         //Settings Preferences
         private static int maxNumberOfClients;
@@ -87,12 +70,11 @@ namespace PanettoneGames
         private bool hasLibrary;
 		public string LibraryPath { get; private set; }
 
-        #endregion
         #region License Setup
-        private const Licence productLicence = Licence.Full; 
-        private const string licenseMenuCaption = productLicence == Licence.Full? "MultiPlay":"DualPlay";   
+        private const Licence productLicence = Licence.Full;
+        private const string licenseMenuCaption = productLicence == Licence.Full ? "MultiPlay" : "DualPlay";
         #endregion
-
+        #endregion
         #region menus
         [MenuItem("Tools/" + licenseMenuCaption + "/Client Manager &C", false, 10)]
 
@@ -101,14 +83,14 @@ namespace PanettoneGames
             try
             {
                 string windowTitle = (productLicence == Licence.Full) ? "MultiPlay" : "DualPlay";
+                window = GetWindow<MultiPlayEditor>(windowTitle, typeof(SceneView));
+                window.titleContent = new GUIContent(windowTitle, EditorGUIUtility.ObjectContent(CreateInstance<MultiPlayEditor>(), typeof(MultiPlayEditor)).image);
                 if (isClient)
                 {
-                    window = GetWindow<MultiPlayEditor>(windowTitle, typeof(SceneView));
                     window.minSize = new Vector2(windowMinWidth, windowMinHeight);
                 }
                 else
                 {
-                    window = GetWindow<MultiPlayEditor>(windowTitle, typeof(SceneView));
                     window.minSize = new Vector2(windowMinWidth, windowMinHeight);
                     window.maxSize = new Vector2(350, windowMinHeight * 1.5f);
                 }
@@ -154,8 +136,6 @@ namespace PanettoneGames
             }
         }
 
-
-
         [MenuItem("Tools/" + licenseMenuCaption + "/Clean Up", true, 11)]
         static bool Validate_Menu_Cleanup()
         {
@@ -166,14 +146,13 @@ namespace PanettoneGames
             return !Application.isPlaying && !isClient;
         }
 
-
         [MenuItem("Tools/" + licenseMenuCaption + "/Rate Please :)", false, 30)]
         public static void MenuRate() => Application.OpenURL($"https://assetstore.unity.com/packages/tools/utilities/multiplay-multiplayer-testing-without-builds-170209?aid=1011lds77&utm_source=aff#reviews");
 
         [MenuItem("Tools/" + licenseMenuCaption + "/Help", false, 30)]
         public static void MenuHelp()
         {
-            Application.OpenURL(@"https://panettonegames.com/");
+            Application.OpenURL(@"https://com/");
 
             string helpFilePath = Application.dataPath + @"/Plugins/PanettoneGames/MultiPlay/MultiPlay Read Me.pdf";
             Debug.Log($"Help file is in: {helpFilePath}");
@@ -205,9 +184,6 @@ namespace PanettoneGames
 
                 defaultFontColor = GUI.contentColor;
 
-                //bgColor = (productLicence == Licence.Full) ? new Color(1f, 1f, 1f) : new Color(0.2f, 0.2f, 0.2f);
-                //bodyColor = (productLicence == Licence.Full) ? new Color(1f, 0.6f, 0.3f) : new Color(0.5f, 0.75f, 1);
-
                 int cnt = Application.dataPath.Split('/').Length;
                 string appFolderName = Application.dataPath.Split('/')[cnt - 2];
                 isClient = appFolderName.EndsWith("___Client");
@@ -222,9 +198,6 @@ namespace PanettoneGames
                 //reset status
                 hasChanged = false;
                 lastSyncTime = DateTime.Now;
-                syncDelay = clientIndex * 1000;
-                //Debug.Log("sync Delay at " + syncDelay);
-                nextSync = Time.realtimeSinceStartup + syncDelay;
 
                 InitializeTextures();
                 RemoveFromHub();
@@ -235,7 +208,6 @@ namespace PanettoneGames
                 InitialiseSettings();
             }
             catch (Exception ex) { Debug.LogError($"{ex.Message}"); }
-
         }
 
         protected virtual void OnDisable()
@@ -305,9 +277,6 @@ namespace PanettoneGames
 
                     if (autoSync)
                     {
-
-
-
                         try
                         {
                             //if (clientIndex > 1)
@@ -339,7 +308,6 @@ namespace PanettoneGames
             catch (Exception e) { Debug.LogError($"{e.Message}"); }
         }
 
-
         private void InitializeTextures()
         {
             try
@@ -361,7 +329,6 @@ namespace PanettoneGames
         {
             DrawLayout();
         }
-
 
         private void DrawLayout()
         {
@@ -400,7 +367,7 @@ namespace PanettoneGames
                 if (GUILayout.Button("More cool tools...", skin.GetStyle("PanStoreLink")))
                 {
                     Application.OpenURL($"https://assetstore.unity.com/publishers/" + myPubID);
-                    Application.OpenURL($"https://panettonegames.com/");
+                    Application.OpenURL($"https://com/");
                 }
                 GUILayout.EndArea();
                 return;
@@ -430,10 +397,9 @@ namespace PanettoneGames
                 if (GUILayout.Button("More cool tools...", skin.GetStyle("PanStoreLink")))
                 {
                     Application.OpenURL($"https://assetstore.unity.com/publishers/" + myPubID);
-                    Application.OpenURL($"https://panettonegames.com/");
+                    Application.OpenURL($"https://com/");
                 }
                 GUILayout.EndArea();
-
             }
 
             else //Original Copy
@@ -474,7 +440,6 @@ namespace PanettoneGames
                                 if (copyLibrary)
                                     CreateLink(destinationPath, "Library"); //kills auto sync.
                             }
-
 
                             EditorSceneManager.SaveScene(SceneManager.GetActiveScene());
                             hasChanged = false;
@@ -546,15 +511,12 @@ namespace PanettoneGames
                         catch (Exception e) { Debug.LogError(e.Message); }
                     }
                 }
-
-                #region store link inside settings
                 
-
-
+                #region store link inside settings
                 if (GUILayout.Button("More cool tools...", skin.GetStyle("PanStoreLink")))
                 {
                     Application.OpenURL($"https://assetstore.unity.com/publishers/" + myPubID);
-                    Application.OpenURL($"https://panettonegames.com/");
+                    Application.OpenURL($"https://com/");
                 }
                 //GUILayout.Space(5);
                 #endregion
@@ -659,7 +621,6 @@ namespace PanettoneGames
                 }
             }
             catch (Exception e) { Debug.LogError($"Unable to clear system cache due to unsufficient User Priviliges. Please contact your system administrator. \nDetails: {e.Message}"); }
-
         }
 
         private void CopyStartupConfig(string destPath)
@@ -758,7 +719,6 @@ namespace PanettoneGames
                 ClearConsole();
             }
             catch (Exception e) { Debug.LogError($"Unable to read temporary files due to unsufficient User Priviliges. Please contact your system administrator. \nDetails: {e.Message}"); }
-
         }
 
         private string GetAppPath(RuntimePlatform currentPlatform)
@@ -778,7 +738,6 @@ namespace PanettoneGames
 
         private static void ClearClient(string destPath)
         {
-
             if (!Directory.Exists(destPath))
                 return;
 
@@ -842,7 +801,6 @@ namespace PanettoneGames
             }
             catch (Exception) { }
             finally { RemoveFromHub(); }
-
         }
 
         private IEnumerator Sleep(float timer)
