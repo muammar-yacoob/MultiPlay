@@ -83,7 +83,8 @@ namespace MultiPlay.Editor
             try
             {
                 string windowTitle = (productLicence == Licence.Full) ? "MultiPlay" : "DualPlay";
-                window = GetWindow<MultiPlayEditor>(windowTitle, typeof(SceneView));
+                if(window == null)
+                    window = GetWindow<MultiPlayEditor>(windowTitle, typeof(SceneView));
                 window.titleContent = new GUIContent(windowTitle, EditorGUIUtility.ObjectContent(CreateInstance<MultiPlayEditor>(), typeof(MultiPlayEditor)).image);
                 if (isClient)
                 {
@@ -707,8 +708,8 @@ namespace MultiPlay.Editor
             {
                 string currentUnityVersion = Application.unityVersion;
                 string editorPath = GetAppPath(Application.platform);
-                //string editorArgs = $" -disable-assembly-updater -silent-crashes -noUpm"; //-nographics
-                string editorArgs = String.Empty; //$" -disable-assembly-updater -silent-crashes";
+
+                string editorArgs = $"-DisableDirectoryMonitor ‑ignorecompilererrors -disable-assembly-updater -silent-crashes";
                 string projectPath = $" -projectPath \"{destPath}\"";
 
                 var thread = new Thread(delegate () { ExcuteCMD($"\"{editorPath}\"", editorArgs + projectPath); });
@@ -790,6 +791,7 @@ namespace MultiPlay.Editor
 
                 startInfo.FileName = prog;
                 startInfo.Arguments = args;
+
                 string tmp = prog + args;
                 //Debug.LogError(tmp);
                 process.StartInfo = startInfo;
