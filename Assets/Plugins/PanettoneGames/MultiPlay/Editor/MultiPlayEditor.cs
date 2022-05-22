@@ -153,7 +153,7 @@ namespace MultiPlay.Editor
         [MenuItem("Tools/" + licenseMenuCaption + "/Help", false, 30)]
         public static void MenuHelp()
         {
-            Application.OpenURL(@"https://com/");
+            Application.OpenURL("https://panettonegames.com/");
 
             string helpFilePath = Application.dataPath + @"/Plugins/PanettoneGames/MultiPlay/MultiPlay Read Me.pdf";
             Debug.Log($"Help file is in: {helpFilePath}");
@@ -368,7 +368,7 @@ namespace MultiPlay.Editor
                 if (GUILayout.Button("More cool tools...", skin.GetStyle("PanStoreLink")))
                 {
                     Application.OpenURL($"https://assetstore.unity.com/publishers/" + myPubID);
-                    Application.OpenURL($"https://com/");
+                    Application.OpenURL("https://panettonegames.com/");
                 }
                 GUILayout.EndArea();
                 return;
@@ -398,7 +398,7 @@ namespace MultiPlay.Editor
                 if (GUILayout.Button("More cool tools...", skin.GetStyle("PanStoreLink")))
                 {
                     Application.OpenURL($"https://assetstore.unity.com/publishers/" + myPubID);
-                    Application.OpenURL($"https://com/");
+                    Application.OpenURL("https://panettonegames.com/");
                 }
                 GUILayout.EndArea();
             }
@@ -517,7 +517,7 @@ namespace MultiPlay.Editor
                 if (GUILayout.Button("More cool tools...", skin.GetStyle("PanStoreLink")))
                 {
                     Application.OpenURL($"https://assetstore.unity.com/publishers/" + myPubID);
-                    Application.OpenURL($"https://com/");
+                    Application.OpenURL("https://panettonegames.com/");
                 }
                 //GUILayout.Space(5);
                 #endregion
