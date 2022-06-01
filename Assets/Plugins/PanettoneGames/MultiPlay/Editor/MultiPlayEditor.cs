@@ -509,7 +509,8 @@ namespace MultiPlay.Editor
                             GUILayout.EndVertical();
 
                         }
-                        catch (Exception e) { Debug.LogError(e.Message); }
+                        catch (Exception e)
+                        { Debug.LogError("Settings Error"); } 
                     }
                 }
                 
