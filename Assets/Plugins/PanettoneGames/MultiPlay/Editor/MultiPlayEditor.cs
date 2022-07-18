@@ -496,7 +496,7 @@ namespace MultiPlay.Editor
                             }
 
                             //GUI.Label(new Rect(10, 200, 100, 40), GUI.tooltip); //another way to display the tool tip
-                            string libraryTip = (linkLibrary) ? $"including Library link. i.e. faster but may break some 3rd party packages (recommended for most small projects)" : "excluding Library link. i.e. project configuration and packages will be stored separately at an extra disk cost and Auty Sync feature is disabled";
+                            string libraryTip = (linkLibrary) ? $"including Library link. i.e. faster but may break some 3rd party packages (recommended for most small projects)" : "excluding Library link. i.e. project configuration and packages will be stored separately at an extra disk cost. This option is safer for larger projects";
                             var msgType = (linkLibrary) ? MessageType.Warning : MessageType.Info;
 
                             EditorGUILayout.HelpBox($"New clients will be created in [{new DirectoryInfo(clonesPath).Name}] {libraryTip}.", msgType);
