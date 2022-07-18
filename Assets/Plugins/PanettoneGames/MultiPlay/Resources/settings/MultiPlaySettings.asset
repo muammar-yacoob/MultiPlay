@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b4e36ceeec678144ebba1cf5b4cbfb77, type: 3}
   m_Name: MultiPlaySettings
   m_EditorClassIdentifier: 
-  maxNumberOfClients: 30
-  clonesPath: D:\Unity MP Clones
+  maxNumberOfClients: 3
+  clonesPath: C:\MPClones
   copyLibrary: 1

@@ -66,7 +66,7 @@ namespace MultiPlay.Editor
         //Settings Preferences
         private static int maxNumberOfClients;
         private static string clonesPath;
-        private bool copyLibrary;
+        private bool linkLibrary;
         private bool hasLibrary;
 		public string LibraryPath { get; private set; }
 
@@ -206,7 +206,7 @@ namespace MultiPlay.Editor
                 EditorApplication.update += OnEditorUpdate;
 
                 multiPlaySettingsAsset = Resources.Load<MultiPlaySettings>("settings/MultiPlaySettings");//there's already one scriptable object asset provided and you don't actually need to create another one, just find it and change its variables
-                InitialiseSettings();
+                LoadSettings();
             }
             catch (Exception ex) { Debug.LogError($"{ex.Message}"); }
         }
@@ -226,14 +226,14 @@ namespace MultiPlay.Editor
             EditorApplication.update -= OnEditorUpdate;
         }
 
-        private void InitialiseSettings()
+        private void LoadSettings()
         {
             if (string.IsNullOrEmpty(clonesPath))
             {
                 clonesPath = multiPlaySettingsAsset.clonesPath;
             }
             maxNumberOfClients = productLicence == Licence.Default? 1 : multiPlaySettingsAsset.maxNumberOfClients;
-            copyLibrary = multiPlaySettingsAsset.copyLibrary;
+            linkLibrary = multiPlaySettingsAsset.copyLibrary;
 
             if (string.IsNullOrEmpty(clonesPath))
             {
@@ -245,7 +245,7 @@ namespace MultiPlay.Editor
         {
             multiPlaySettingsAsset.clonesPath = clonesPath;
             multiPlaySettingsAsset.maxNumberOfClients = maxNumberOfClients;
-            multiPlaySettingsAsset.copyLibrary = copyLibrary;
+            multiPlaySettingsAsset.copyLibrary = linkLibrary;
         }
 
 
@@ -386,7 +386,7 @@ namespace MultiPlay.Editor
                     ReloadScene();
                 }
 
-                hasLibrary = !IsSymbolic(LibraryPath);
+                hasLibrary = false;//!IsSymbolic(LibraryPath);
                 string autoSyncCaption = !hasLibrary ? "Auto Sync" : "Auto Sync - Client created without [Link Library]";
                 GUI.enabled = !hasLibrary;
                 autoSync = GUILayout.Toggle(!hasLibrary ? autoSync : false, autoSyncCaption);
@@ -395,11 +395,6 @@ namespace MultiPlay.Editor
                 if (hasChanged) EditorGUILayout.HelpBox("Changes from original build were detected. Make sure to Sync before running", MessageType.Warning);
                 else EditorGUILayout.HelpBox($"You're Good to Go!\nLast Changed:\t{lastWriteTime}\nLast Synced:\t{lastSyncTime}", MessageType.Info);
 
-                if (GUILayout.Button("More cool tools...", skin.GetStyle("PanStoreLink")))
-                {
-                    Application.OpenURL($"https://assetstore.unity.com/publishers/" + myPubID);
-                    Application.OpenURL("https://panettonegames.com/");
-                }
                 GUILayout.EndArea();
             }
 
@@ -427,6 +422,8 @@ namespace MultiPlay.Editor
                         if (Directory.Exists(destinationPath)) GUI.contentColor = Color.green;
                         if (GUILayout.Button(btnCaption, GUILayout.Height(25)))
                         {
+                            SaveSettings();
+                            LoadSettings();
                             Debug.Log($"creating Client {i} in {destinationPath.Replace("\\\\", "\\")}");
 
                             /////////////
@@ -438,7 +435,7 @@ namespace MultiPlay.Editor
                                 CreateLink(destinationPath, "ProjectSettings");
                                 CreateLink(destinationPath, "Packages");
 
-                                if (copyLibrary)
+                                if (linkLibrary)
                                     CreateLink(destinationPath, "Library"); //kills auto sync.
                             }
 
@@ -484,7 +481,7 @@ namespace MultiPlay.Editor
                             maxNumberOfClients = Mathf.Clamp(maxNumberOfClients, 1, maxClientsHardLimit);
                             EditorGUILayout.Space(20);
 
-                            copyLibrary = GUILayout.Toggle(copyLibrary, "Link Library");
+                            linkLibrary = GUILayout.Toggle(linkLibrary, "Link Library");
                             GUILayout.EndHorizontal();
 
                             clonesPath = EditorGUILayout.TextField(new GUIContent("Clones Path:", "Default Path of project clones"), clonesPath);
@@ -499,8 +496,8 @@ namespace MultiPlay.Editor
                             }
 
                             //GUI.Label(new Rect(10, 200, 100, 40), GUI.tooltip); //another way to display the tool tip
-                            string libraryTip = (copyLibrary) ? $"including Library link. i.e. faster but may break some 3rd party packages (recommended for most small projects)" : "excluding Library link. i.e. project configuration and packages will be stored separately at an extra disk cost and Auty Sync feature is disabled";
-                            var msgType = (copyLibrary) ? MessageType.Warning : MessageType.Info;
+                            string libraryTip = (linkLibrary) ? $"including Library link. i.e. faster but may break some 3rd party packages (recommended for most small projects)" : "excluding Library link. i.e. project configuration and packages will be stored separately at an extra disk cost and Auty Sync feature is disabled";
+                            var msgType = (linkLibrary) ? MessageType.Warning : MessageType.Info;
 
                             EditorGUILayout.HelpBox($"New clients will be created in [{new DirectoryInfo(clonesPath).Name}] {libraryTip}.", msgType);
 
@@ -509,19 +506,11 @@ namespace MultiPlay.Editor
                             GUILayout.EndVertical();
 
                         }
-                        catch (Exception e)
+                        catch (Exception)
                         { Debug.LogError("Settings Error"); } 
                     }
                 }
                 
-                #region store link inside settings
-                if (GUILayout.Button("More cool tools...", skin.GetStyle("PanStoreLink")))
-                {
-                    Application.OpenURL($"https://assetstore.unity.com/publishers/" + myPubID);
-                    Application.OpenURL("https://panettonegames.com/");
-                }
-                //GUILayout.Space(5);
-                #endregion
                 GUILayout.EndVertical();
                 GUILayout.EndArea();
             }
