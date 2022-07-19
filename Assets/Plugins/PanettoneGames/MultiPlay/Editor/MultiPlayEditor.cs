@@ -207,6 +207,7 @@ namespace MultiPlay.Editor
 
                 multiPlaySettingsAsset = Resources.Load<MultiPlaySettings>("settings/MultiPlaySettings");//there's already one scriptable object asset provided and you don't actually need to create another one, just find it and change its variables
                 LoadSettings();
+                if (isClient) Utils.ClearConsole();
             }
             catch (Exception ex) { Debug.LogError($"{ex.Message}"); }
         }

@@ -1,4 +1,6 @@
+using static System.Reflection.Assembly;
 using UnityEngine;
+using UnityEditor;
 
 namespace MultiPlay
 {
@@ -23,6 +25,13 @@ namespace MultiPlay
                 }
             }
             return clientIndex;
+        }
+
+        public static void ClearConsole()
+        {
+            var assembly = GetAssembly(typeof(SceneView));
+            var logEntries = assembly.GetType("UnityEditor.LogEntries");
+            logEntries.GetMethod("Clear")?.Invoke(new object(), null);
         }
     }
 }
