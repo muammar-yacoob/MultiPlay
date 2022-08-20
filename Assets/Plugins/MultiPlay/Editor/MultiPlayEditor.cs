@@ -47,7 +47,8 @@ namespace MultiPlay.Editor
         private DateTime lastWriteTime;
         private static bool autoSync;
 
-        private Int32 clientIndex;
+        private int clientIndex;
+        private object clientName;
         private string headerText;
         private GUIStyle headerStyle;
         private Color defaultFontColor;
@@ -116,7 +117,7 @@ namespace MultiPlay.Editor
 
             if (DoLinksLive())
             {
-                Debug.Log("WARNING: Live Clients were detected! You Should close them before clearing references; Otherwise, Unity may crash!");
+                Debug.LogWarning("WARNING: Live Clients were detected! You Should close them before clearing references; Otherwise, Unity may crash!");
                 msg = "WARNING!! Make sure ALL CLIENTS are CLOSED before proceeding!!";
             }
 
@@ -163,6 +164,7 @@ namespace MultiPlay.Editor
         #endregion
 
         private void Awake() => InitializeTextures();
+
         private void OnEnable()
         {
             try
@@ -208,6 +210,12 @@ namespace MultiPlay.Editor
                 multiPlaySettingsAsset = Resources.Load<MultiPlaySettings>("settings/MultiPlaySettings");//there's already one scriptable object asset provided and you don't actually need to create another one, just find it and change its variables
                 LoadSettings();
                 if (isClient) Utils.ClearConsole();
+
+                if(productLicence == Licence.Full)
+                {
+                    clientIndex = Utils.GetCurrentClientIndex();
+                    clientName = clientIndex == 0 ? "Main" : $"Client[{clientIndex}]";
+                }
             }
             catch (Exception ex) { Debug.LogError($"{ex.Message}"); }
         }
@@ -364,8 +372,8 @@ namespace MultiPlay.Editor
             if (EditorApplication.isPlaying)
             {
                 GUILayout.BeginArea(bodyRect);
-                EditorGUILayout.HelpBox($"Control panel is disabled while playing.", MessageType.Info);
-                ShowNotification(new GUIContent("Playing..."), 1);
+                EditorGUILayout.HelpBox($"{clientName}: Control panel is disabled while playing.", MessageType.Info);
+                ShowNotification(new GUIContent($"Running on {clientName}..."), 1);
                 if (GUILayout.Button("More cool tools...", skin.GetStyle("PanStoreLink")))
                 {
                     Application.OpenURL($"https://assetstore.unity.com/publishers/" + myPubID);
@@ -680,7 +688,7 @@ namespace MultiPlay.Editor
                         args = $"/c xcopy /s /y {sourcePath}\\{subDirectory} {destPath}\\{subDirectory}";
                         var thread = new Thread(delegate () { ExcuteCMD("cmd", args); });
                         thread.Start();
-                        ClearConsole();
+                        //ClearConsole();
                     }
                     catch (Exception exx)
                     {
@@ -708,7 +716,7 @@ namespace MultiPlay.Editor
 
                 thread.Start();
                 //RemoveFromHub();
-                ClearConsole();
+                if(isClient) ClearConsole();
             }
             catch (Exception e) { Debug.LogError($"Unable to read temporary files due to unsufficient User Priviliges. Please contact your system administrator. \nDetails: {e.Message}"); }
         }
