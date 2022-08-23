@@ -1,6 +1,6 @@
 {
-	"name": "com.born-studios.born-core",
-	"version": "1.4.7",
+	"name": "com.panettonegames.MultiPlay",
+	"version": "1.5.1",
 	"displayName": "MultiPlay",
 	"description": "Helps Multiplayer development by running multiple editors for the same project",
 	"type": "library",
