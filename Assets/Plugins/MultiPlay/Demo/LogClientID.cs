@@ -1,5 +1,5 @@
+#if UNITY_EDITOR_WIN
 using UnityEngine;
-//using MultiPlay.Utils;
 
 public class LogClientID : MonoBehaviour
 {
@@ -10,3 +10,4 @@ public class LogClientID : MonoBehaviour
         else Debug.Log($"MultiPlay is running on Client: {clientIndex}");
     }
 }
+#endif
