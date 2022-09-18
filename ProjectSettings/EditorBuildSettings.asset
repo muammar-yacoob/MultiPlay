@@ -6,6 +6,6 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/New Scene.unity
-    guid: 7b4bbb9a7a72c454fbd86c47ed605ac2
+    path: Assets/Plugins/MultiPlay/Demo/Demo.unity
+    guid: 58ece46b8ba7fd0429f6294ca6fa1bb2
   m_configObjects: {}

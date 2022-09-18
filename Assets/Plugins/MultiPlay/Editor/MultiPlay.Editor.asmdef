@@ -1,9 +1,7 @@
 {
     "name": "MultiPlay.Editor",
     "rootNamespace": "",
-    "references": [
-        "GUID:2056cdbfa95d3484e9637c9431c90fcc"
-    ],
+    "references": [],
     "includePlatforms": [
         "Editor"
     ],

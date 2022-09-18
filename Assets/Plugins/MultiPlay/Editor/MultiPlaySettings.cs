@@ -1,5 +1,5 @@
 using UnityEngine;
-namespace MultiPlay
+namespace MultiPlay.Editor
 {
     //[CreateAssetMenu(menuName = "MultiPlay/Settings")] //Uncomment to create one object to control the global settings.
     public class MultiPlaySettings : ScriptableObject
