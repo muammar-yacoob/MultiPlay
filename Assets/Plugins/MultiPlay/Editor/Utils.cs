@@ -1,19 +1,19 @@
-using static System.Reflection.Assembly;
 using UnityEngine;
 
 namespace MultiPlay.Editor
 {
     public class Utils
     {
+        private static string GetAppFolder()
+        {
+            int dirDepth = Application.dataPath.Split('/').Length;
+            return Application.dataPath.Split('/')[dirDepth - 2];
+        }
         public static int GetCurrentClientIndex()
         {
             int clientIndex = 0;
-            int dirDepth = Application.dataPath.Split('/').Length;
-            string appFolderName = Application.dataPath.Split('/')[dirDepth - 2];
-            bool isClient;
-
-            isClient = appFolderName.EndsWith("___Client");
-            if (isClient)
+            string appFolderName = GetAppFolder();
+            if (IsClient)
             {
                 clientIndex = 1;
 
@@ -25,5 +25,7 @@ namespace MultiPlay.Editor
             }
             return clientIndex;
         }
+
+        public static bool IsClient => GetAppFolder().EndsWith("___Client");
     }
 }
