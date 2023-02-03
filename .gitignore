@@ -73,3 +73,5 @@ crashlytics-build.properties
 
 # Others
 *.bak
+*.cache
+*.dll

@@ -424,11 +424,20 @@ namespace MultiPlay.Editor
                     for (int i = 1; i < maxNumberOfClients + 1; i++)
                     {
                         string destinationPath = $"{ clonesPath }/{Application.productName}_[{i}]___Client".Replace(@"/", @"\");
-                        string btnCaption = Directory.Exists(destinationPath) ? $"Launch Client [{i}]" : $"Create Client [{i}]";
+                        var createLinkCaption = linkLibrary ? "- Ω" : string.Empty;
+                        var libPath = Path.Combine(destinationPath, "Library");
+                        var linkExists = Directory.Exists(libPath);
+                        var openLinkCaption = string.Empty;
+                        if( linkExists) 
+                            openLinkCaption = IsSymbolic(libPath) ? "- Ω" : String.Empty;
+                        
+                        string btnCaption = Directory.Exists(destinationPath) ? $"Launch Client [{i}] {openLinkCaption}" : $"Create Client [{i}] {createLinkCaption}";
                         GUI.enabled = !Directory.Exists(destinationPath + "\\Temp");
 
                         GUILayout.BeginHorizontal();
                         if (Directory.Exists(destinationPath)) GUI.contentColor = Color.green;
+                        if (Directory.Exists(destinationPath) && IsSymbolic(libPath)) GUI.contentColor = Color.yellow;
+                        
                         if (GUILayout.Button(btnCaption, GUILayout.Height(25)))
                         {
                             SaveSettings();

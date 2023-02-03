@@ -17,7 +17,7 @@ namespace MultiPlay.Editor
         private void OnEnable()
         {
             maxNumberOfClients = 3;
-            copyLibrary = true;
+            copyLibrary = false;
 
             if (string.IsNullOrEmpty(clonesPath))
                 clonesPath = Application.persistentDataPath;
