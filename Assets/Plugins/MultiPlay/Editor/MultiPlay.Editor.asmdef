@@ -1,7 +1,9 @@
 {
     "name": "MultiPlay.Editor",
-    "rootNamespace": "",
-    "references": [],
+    "rootNamespace": "MultiPlay",
+    "references": [
+        "MultiPlay.Runtime"
+    ],
     "includePlatforms": [
         "Editor"
     ],

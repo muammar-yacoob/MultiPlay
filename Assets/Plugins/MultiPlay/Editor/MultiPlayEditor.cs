@@ -71,6 +71,7 @@ namespace MultiPlay
         private bool hasLibrary;
         private static float ppp;
         private static float buttonHeight = 30;
+        private MultiPlay.Utils utils;
         public string LibraryPath { get; private set; }
 
         #region License Setup
