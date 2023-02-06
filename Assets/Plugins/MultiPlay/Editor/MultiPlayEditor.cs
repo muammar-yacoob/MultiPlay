@@ -1,20 +1,20 @@
-﻿using Microsoft.Win32;
-using System;
+﻿using System;
 using System.Collections;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Threading;
+using Microsoft.Win32;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Debug = UnityEngine.Debug;
 
-namespace MultiPlay.Editor
+namespace MultiPlay
 {
     [InitializeOnLoad]
-    public class MultiPlayEditor : UnityEditor.EditorWindow
+    internal class MultiPlayEditor : UnityEditor.EditorWindow
     {
         #region privateMembers
         private string sourcePath;
@@ -23,10 +23,10 @@ namespace MultiPlay.Editor
         private Texture2D bgTexture;
         private Texture2D headerTexture;
         private Texture2D bodyTexture;
-        private const int windowMinWidth = 180;
-        private const int windowMinHeight = 180;
-        private const int windowMaxWidthExpanded = 420;
-        private const int windowMinHeightExpanded = 320;
+        private static float windowMinWidth = 180;
+        private static float windowMinHeight = 180;
+        private static float windowMaxWidthExpanded = 420;
+        private static float windowMinHeightExpanded = 320;
 
         private Color bgColor;
         private Color bodyColor;
@@ -35,9 +35,9 @@ namespace MultiPlay.Editor
         private Rect headerRect;
         private Rect bodyRect;
 
-        private float headerTexScale = 0.20f;
+        private static float headerTexScale = 0.20f;
         private GUISkin skin;
-        private float pad = 5f;
+        private float pad = 15;
 
         private bool isCreatingReferences;
         private bool hasChanged;
@@ -62,25 +62,30 @@ namespace MultiPlay.Editor
 
         //Settings: Hard coded
         private MultiPlaySettings multiPlaySettingsAsset;
-        private int maxClientsHardLimit = 30; 
+        private readonly int maxClientsHardLimit = 30; 
 
         //Settings Preferences
         private static int maxNumberOfClients;
         private static string clonesPath;
         private bool linkLibrary;
         private bool hasLibrary;
-		public string LibraryPath { get; private set; }
+        private static float ppp;
+        private static float buttonHeight = 30;
+        public string LibraryPath { get; private set; }
 
         #region License Setup
         private const Licence productLicence = Licence.Full;
         private const string licenseMenuCaption = productLicence == Licence.Full ? "MultiPlay" : "DualPlay";
         #endregion
         #endregion
+
+        private void Awake() => InitializeTextures();
+
         #region menus
         [MenuItem("Tools/" + licenseMenuCaption + "/Client Manager &C", false, 10)]
-
         public static void OpenWindow()
         {
+            RescaleUI();
             try
             {
                 string windowTitle = (productLicence == Licence.Full) ? "MultiPlay" : "DualPlay";
@@ -94,7 +99,7 @@ namespace MultiPlay.Editor
                 else
                 {
                     window.minSize = new Vector2(windowMinWidth, windowMinHeight);
-                    window.maxSize = new Vector2(350, windowMinHeight * 1.5f);
+                    window.maxSize = new Vector2(windowMaxWidthExpanded, windowMaxWidthExpanded * 1.5f);
                 }
 
                 window.Show();
@@ -149,7 +154,7 @@ namespace MultiPlay.Editor
         }
 
         [MenuItem("Tools/" + licenseMenuCaption + "/Rate Please :)", false, 30)]
-        public static void MenuRate() => Application.OpenURL($"https://assetstore.unity.com/packages/tools/utilities/multiplay-multiplayer-testing-without-builds-170209?aid=1011lds77&utm_source=aff#reviews");
+        public static void MenuRate() => Application.OpenURL($"https://assetstore.unity.com/packages/tools/utilities/multiplay-multiplayer-testing-without-builds-170pad9?aid=1011lds77&utm_source=aff#reviews");
 
         [MenuItem("Tools/" + licenseMenuCaption + "/Help", false, 30)]
         public static void MenuHelp()
@@ -163,10 +168,10 @@ namespace MultiPlay.Editor
         }
         #endregion
 
-        private void Awake() => InitializeTextures();
 
         private void OnEnable()
         {
+            InitializeTextures();
             try
             {
                 EditorApplication.playModeStateChanged += HandleOnPlayModeChanged;
@@ -186,6 +191,8 @@ namespace MultiPlay.Editor
                 headerStyle = (productLicence == Licence.Full) ? skin.GetStyle("PanHeaderFull") : skin.GetStyle("PanHeaderDefault");
 
                 defaultFontColor = GUI.contentColor;
+
+                //RescaleUI();
 
                 int cnt = Application.dataPath.Split('/').Length;
                 string appFolderName = Application.dataPath.Split('/')[cnt - 2];
@@ -218,6 +225,17 @@ namespace MultiPlay.Editor
                 }
             }
             catch (Exception ex) { Debug.LogError($"{ex.Message}"); }
+        }
+
+        private static void RescaleUI()
+        {
+            ppp = EditorGUIUtility.pixelsPerPoint;
+            buttonHeight /= ppp;
+            headerTexScale /= ppp;
+            windowMinWidth /= ppp;
+            windowMinHeight /= ppp;
+            windowMaxWidthExpanded /= ppp;
+            windowMinHeightExpanded /= ppp;
         }
 
         protected virtual void OnDisable()
@@ -347,15 +365,16 @@ namespace MultiPlay.Editor
             if (bgTexture == null || headerTexture == null || skin == null)
                 InitializeTextures();
 
-            fullRect = new Rect(0, 0, Screen.width, Screen.height);
+            fullRect = new Rect(pad, pad, Screen.width - pad * 2, Screen.height - pad * 2);
             GUI.DrawTexture(fullRect, bgTexture);
 
             //Header
-            headerRect = new Rect(Screen.width - headerTexture.width * headerTexScale, 0, headerTexture.width * headerTexScale, headerTexture.height * headerTexScale);
+            headerRect = new Rect(((Screen.width - headerTexture.width * headerTexScale) /ppp)- (20) ,pad, headerTexture.width * headerTexScale, headerTexture.height * headerTexScale);
             GUI.DrawTexture(headerRect, headerTexture);
-
+            pad /= ppp;
             //Body
             bodyRect = new Rect(pad, headerRect.height + pad, Screen.width - pad * 2, Screen.height - headerRect.height - pad * 2);
+            //bodyRect /= ppp;
             GUI.DrawTexture(bodyRect, bodyTexture);
 
             #region Draw Header
@@ -410,7 +429,7 @@ namespace MultiPlay.Editor
             else //Original Copy
             {
                 GUILayout.BeginArea(bodyRect);////////////////////1
-                GUILayout.BeginVertical();//////////////2
+                GUILayout.BeginVertical(GUILayout.Height((Screen.height - pad)/ppp),GUILayout.Width((Screen.width - pad * 2)/ppp));//////////////2
 
                 if (isCreatingReferences)
                 {
@@ -419,7 +438,7 @@ namespace MultiPlay.Editor
                 }
                 else //Create References Or Launch
                 {
-                    scrollPos = EditorGUILayout.BeginScrollView(scrollPos, GUILayout.ExpandWidth(true), GUILayout.Height(90));
+                    scrollPos = EditorGUILayout.BeginScrollView(scrollPos, GUILayout.ExpandWidth(true), GUILayout.Height(105/ppp), GUILayout.Width((Screen.width - pad*2)/ppp));
 
                     for (int i = 1; i < maxNumberOfClients + 1; i++)
                     {
@@ -438,7 +457,7 @@ namespace MultiPlay.Editor
                         if (Directory.Exists(destinationPath)) GUI.contentColor = Color.green;
                         if (Directory.Exists(destinationPath) && IsSymbolic(libPath)) GUI.contentColor = Color.yellow;
                         
-                        if (GUILayout.Button(btnCaption, GUILayout.Height(25)))
+                        if (GUILayout.Button(btnCaption, GUILayout.Height(buttonHeight)))
                         {
                             SaveSettings();
                             LoadSettings();
@@ -469,7 +488,7 @@ namespace MultiPlay.Editor
                         if (Directory.Exists(destinationPath))
                         {
                             GUI.contentColor = Color.red;
-                            if (GUILayout.Button("X", GUILayout.Height(25), GUILayout.Width(25)))
+                            if (GUILayout.Button("x", GUILayout.Height(buttonHeight), GUILayout.Width(35/ppp)))
                             {
                                 Debug.Log($"Deleting [{new DirectoryInfo(destinationPath).Name}]");
                                 ClearClient(destinationPath);
@@ -491,19 +510,15 @@ namespace MultiPlay.Editor
                         try
                         {
 
-                            EditorGUILayout.Space(5);
-                            GUILayout.BeginVertical();
-                            GUILayout.BeginHorizontal();
+                            EditorGUILayout.Space(5/ppp);
+                            GUILayout.BeginVertical(GUILayout.Height(Screen.height - pad * 2),GUILayout.Width(Screen.width - pad*2));
+                            linkLibrary = GUILayout.Toggle(linkLibrary, "Link Library");
 
                             maxNumberOfClients = EditorGUILayout.IntField(new GUIContent("Max Clients:", $"Maximum number of allowed clients is {maxClientsHardLimit}"), Mathf.Clamp(maxNumberOfClients, 1, maxClientsHardLimit));
                             maxNumberOfClients = Mathf.Clamp(maxNumberOfClients, 1, maxClientsHardLimit);
-                            EditorGUILayout.Space(20);
-
-                            linkLibrary = GUILayout.Toggle(linkLibrary, "Link Library");
-                            GUILayout.EndHorizontal();
 
                             clonesPath = EditorGUILayout.TextField(new GUIContent("Clones Path:", "Default Path of project clones"), clonesPath);
-                            if (GUILayout.Button("Browse", GUILayout.Height(25)))
+                            if (GUILayout.Button("Browse", GUILayout.Height(buttonHeight),GUILayout.Width((Screen.width - pad * 2)/ppp)))
                             {
                                 string path = EditorUtility.OpenFolderPanel("Select Clones Folder", clonesPath, "");
                                 if (path.Length != 0)
@@ -513,12 +528,13 @@ namespace MultiPlay.Editor
                                 }
                             }
 
-                            //GUI.Label(new Rect(10, 200, 100, 40), GUI.tooltip); //another way to display the tool tip
+                            //GUI.Label(new Rect(10, pad0, 100, 40), GUI.tooltip); //another way to display the tool tip
                             string libraryTip = (linkLibrary) ? $"including Library link. i.e. faster but may break some 3rd party packages (recommended for most small projects)" : "excluding Library link. i.e. project configuration and packages will be stored separately at an extra disk cost. This option is safer for larger projects";
                             var msgType = (linkLibrary) ? MessageType.Warning : MessageType.Info;
 
+                            GUILayout.BeginHorizontal(GUILayout.Width((Screen.width - pad)/ppp));
                             EditorGUILayout.HelpBox($"New clients will be created in [{new DirectoryInfo(clonesPath).Name}] {libraryTip}.", msgType);
-
+                            GUILayout.EndHorizontal();
 
                             //GUILayout.Space(10);
                             GUILayout.EndVertical();

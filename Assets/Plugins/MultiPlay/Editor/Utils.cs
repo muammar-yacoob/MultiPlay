@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace MultiPlay.Editor
+namespace MultiPlay
 {
     public class Utils
     {

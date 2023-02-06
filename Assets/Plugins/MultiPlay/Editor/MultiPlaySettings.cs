@@ -1,8 +1,9 @@
 using UnityEngine;
-namespace MultiPlay.Editor
+
+namespace MultiPlay
 {
     //[CreateAssetMenu(menuName = "MultiPlay/Settings")] //Uncomment to create one object to control the global settings.
-    public class MultiPlaySettings : ScriptableObject
+    internal class MultiPlaySettings : ScriptableObject
     {
         [Range(1, 30)]
         [Tooltip("Maximum number of clients")]
@@ -16,7 +17,7 @@ namespace MultiPlay.Editor
 
         private void OnEnable()
         {
-            maxNumberOfClients = 3;
+            maxNumberOfClients = 5;
             copyLibrary = false;
 
             if (string.IsNullOrEmpty(clonesPath))
