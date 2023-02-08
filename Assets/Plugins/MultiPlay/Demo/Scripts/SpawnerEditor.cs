@@ -1,25 +1,23 @@
-﻿using System;
-using UnityEditor;
+﻿using UnityEditor;
 using UnityEngine;
-using Random = UnityEngine.Random;
 
 namespace MultiPlay.Demo
 {
-    [CustomEditor(typeof(Spawner))]
-    public class SpawnerEditor : Editor
+    [CustomEditor(typeof(Spinner))]
+    internal class SpawnerEditor : Editor
     {
-        private Spawner spawner;
+        private Spinner spinner;
         private Camera cam;
 
 
         public override void OnInspectorGUI()
         {
-            spawner ??= (Spawner)target;
+            spinner ??= (Spinner)target;
             cam ??= Camera.main;
             
             if (GUILayout.Button("Spin"))
             {
-                spawner.Spin();
+                spinner.Spin();
             }
             DrawDefaultInspector();
             //Repaint();
