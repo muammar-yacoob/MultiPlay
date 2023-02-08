@@ -9,7 +9,7 @@ namespace MultiPlay
             int dirDepth = Application.dataPath.Split('/').Length;
             return Application.dataPath.Split('/')[dirDepth - 2];
         }
-        public static int GetCurrentClientIndex()
+        public static int GetCurrentCloneIndex()
         {
             int clientIndex = 0;
             string appFolderName = GetAppFolder();

@@ -2,8 +2,10 @@
 using System.Collections;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Win32;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -14,7 +16,7 @@ using Debug = UnityEngine.Debug;
 namespace MultiPlay
 {
     [InitializeOnLoad]
-    internal class MultiPlayEditor : UnityEditor.EditorWindow
+    internal partial class MultiPlayEditor : UnityEditor.EditorWindow
     {
         #region privateMembers
         private string sourcePath;
@@ -41,18 +43,18 @@ namespace MultiPlay
 
         private bool isCreatingReferences;
         private bool hasChanged;
-        private static bool isClient;
+        private static bool isClone;
         private string sceneFilePath;
         private DateTime lastSyncTime;
         private DateTime lastWriteTime;
         private static bool autoSync;
 
-        private int clientIndex;
-        private object clientName;
+        private int cloneIndex;
+        private object cloneName;
         private string headerText;
         private GUIStyle headerStyle;
         private Color defaultFontColor;
-        private string clientHeaderText;
+        private string cloneHeaderText;
 
         private static string myPubID = "46749";
         private float timer;
@@ -62,15 +64,15 @@ namespace MultiPlay
 
         //Settings: Hard coded
         private MultiPlaySettings multiPlaySettingsAsset;
-        private readonly int maxClientsHardLimit = 30; 
+        private readonly int maxclonesHardLimit = 30; 
 
         //Settings Preferences
-        private static int maxNumberOfClients;
+        private static int maxNumberOfclones;
         private static string clonesPath;
         private bool linkLibrary;
         private bool hasLibrary;
         private static float ppp;
-        private static float buttonHeight = 30;
+        private static float buttonHeight = 25;
         private MultiPlay.Utils utils;
         public string LibraryPath { get; private set; }
 
@@ -83,7 +85,7 @@ namespace MultiPlay
         private void Awake() => InitializeTextures();
 
         #region menus
-        [MenuItem("Tools/" + licenseMenuCaption + "/Client Manager &C", false, 10)]
+        [MenuItem("Tools/" + licenseMenuCaption + "/clone Manager &C", false, 10)]
         public static void OpenWindow()
         {
             RescaleUI();
@@ -93,7 +95,7 @@ namespace MultiPlay
                 if(window == null)
                     window = GetWindow<MultiPlayEditor>(windowTitle, typeof(SceneView));
                 window.titleContent = new GUIContent(windowTitle, EditorGUIUtility.ObjectContent(CreateInstance<MultiPlayEditor>(), typeof(MultiPlayEditor)).image);
-                if (isClient)
+                if (isClone)
                 {
                     window.minSize = new Vector2(windowMinWidth, windowMinHeight);
                 }
@@ -113,18 +115,18 @@ namespace MultiPlay
         [MenuItem("Tools/" + licenseMenuCaption + "/Clean Up", false, 11)]
         static void Menu_Cleanup()
         {
-            int clientsFound = DoLinksExist();
+            int clonesFound = DoLinksExist();
 
-            string msg = $"Clearing cached references to {clientsFound} clients, are you sure you want to proceed?";
+            string msg = $"Clearing cached references to {clonesFound} clones, are you sure you want to proceed?";
 
 
-            if (clientsFound == 0)
-                msg = $"No Clients were found in {clonesPath}, Try clear references anyway?";
+            if (clonesFound == 0)
+                msg = $"No clones were found in {clonesPath}, Try clear references anyway?";
 
             if (DoLinksLive())
             {
-                Debug.LogWarning("WARNING: Live Clients were detected! You Should close them before clearing references; Otherwise, Unity may crash!");
-                msg = "WARNING!! Make sure ALL CLIENTS are CLOSED before proceeding!!";
+                Debug.LogWarning("WARNING: Live clones were detected! You Should close them before clearing references; Otherwise, Unity may crash!");
+                msg = "WARNING!! Make sure ALL cloneS are CLOSED before proceeding!!";
             }
 
             if (EditorUtility.DisplayDialog("Clearing References", msg, "Proceed", "Cancel"))
@@ -133,7 +135,7 @@ namespace MultiPlay
                 {
                     Debug.Log("Cleaning cache...");
                     EditorUtility.DisplayProgressBar("Processing..", "Shows a progress", 0.9f);
-                    PurgeAllClients();
+                    PurgeAllclones();
                     EditorUtility.ClearProgressBar();
                     Debug.Log("MultiPlay: References cleared successfully");
                     RemoveFromHub();
@@ -149,9 +151,9 @@ namespace MultiPlay
         {
             int cnt = Application.dataPath.Split('/').Length;
             string appFolderName = Application.dataPath.Split('/')[cnt - 2];
-            isClient = appFolderName.EndsWith("___Client");
+            isClone = appFolderName.EndsWith("_Clone");
 
-            return !Application.isPlaying && !isClient;
+            return !Application.isPlaying && !isClone;
         }
 
         [MenuItem("Tools/" + licenseMenuCaption + "/Rate Please :)", false, 30)]
@@ -197,14 +199,14 @@ namespace MultiPlay
 
                 int cnt = Application.dataPath.Split('/').Length;
                 string appFolderName = Application.dataPath.Split('/')[cnt - 2];
-                isClient = appFolderName.EndsWith("___Client");
-                if (isClient)
+                isClone = IsSymbolic(Application.dataPath);// appFolderName.EndsWith("_Clone");
+                if (isClone)
                 {
-                    bool indexHasParsed = Int32.TryParse(appFolderName.Substring(appFolderName.IndexOf('[') + 1, 1), out clientIndex);
+                    bool indexHasParsed = Int32.TryParse(appFolderName.Substring(appFolderName.IndexOf('[') + 1, 1), out cloneIndex);
                     LibraryPath = Application.dataPath + "/../Library";
                 }
 
-                clientHeaderText = (productLicence == Licence.Full) ? $"Client [{clientIndex}]" : $"Client";
+                cloneHeaderText = (productLicence == Licence.Full) ? $"clone [{cloneIndex}]" : $"clone";
 
                 //reset status
                 hasChanged = false;
@@ -217,12 +219,12 @@ namespace MultiPlay
 
                 multiPlaySettingsAsset = Resources.Load<MultiPlaySettings>("settings/MultiPlaySettings");//there's already one scriptable object asset provided and you don't actually need to create another one, just find it and change its variables
                 LoadSettings();
-                if (isClient) ClearConsole();
+                if (isClone) ClearConsole();
 
                 if(productLicence == Licence.Full)
                 {
-                    clientIndex = Utils.GetCurrentClientIndex();
-                    clientName = clientIndex == 0 ? "Main" : $"Client[{clientIndex}]";
+                    cloneIndex = Utils.GetCurrentCloneIndex();
+                    cloneName = cloneIndex == 0 ? "Main" : $"clone[{cloneIndex}]";
                 }
             }
             catch (Exception ex) { Debug.LogError($"{ex.Message}"); }
@@ -260,7 +262,7 @@ namespace MultiPlay
             {
                 clonesPath = multiPlaySettingsAsset.clonesPath;
             }
-            maxNumberOfClients = productLicence == Licence.Default? 1 : multiPlaySettingsAsset.maxNumberOfClients;
+            maxNumberOfclones = productLicence == Licence.Default? 1 : multiPlaySettingsAsset.maxNumberOfClones;
             linkLibrary = multiPlaySettingsAsset.copyLibrary;
 
             if (string.IsNullOrEmpty(clonesPath))
@@ -272,14 +274,14 @@ namespace MultiPlay
         private void SaveSettings()
         {
             multiPlaySettingsAsset.clonesPath = clonesPath;
-            multiPlaySettingsAsset.maxNumberOfClients = maxNumberOfClients;
+            multiPlaySettingsAsset.maxNumberOfClones = maxNumberOfclones;
             multiPlaySettingsAsset.copyLibrary = linkLibrary;
         }
 
 
         private void HandleOnPlayModeChanged(PlayModeStateChange obj)
         {
-            if (EditorApplication.isPlayingOrWillChangePlaymode && isClient && !autoSync)
+            if (EditorApplication.isPlayingOrWillChangePlaymode && isClone && !autoSync)
             {
                 //CheckIfSceneChanged();
                 //if (hasChanged)
@@ -293,7 +295,7 @@ namespace MultiPlay
 
         private void OnEditorUpdate()
         {
-            if (isClient) CheckIfSceneChanged();
+            if (isClone) CheckIfSceneChanged();
         }
 
         private void CheckIfSceneChanged()
@@ -308,10 +310,10 @@ namespace MultiPlay
                     {
                         try
                         {
-                            //if (clientIndex > 1)
+                            //if (cloneIndex > 1)
                             {
                                 //Debug.Log("Lib: " + copyLibrary + ". Refreshing...");
-                                System.Threading.Thread.Sleep(clientIndex * 50); //<< inducing some delay here to prevent Editor crashing
+                                System.Threading.Thread.Sleep(cloneIndex * 50); //<< inducing some delay here to prevent Editor crashing
 
                                 hasChanged = false;
                                 lastSyncTime = DateTime.Now;
@@ -358,8 +360,21 @@ namespace MultiPlay
         {
             DrawLayout();
         }
+        
+        public static async Task<long> GetDirSize(string searchDirectory)
+        {
+            // var files = Directory.EnumerateFiles(searchDirectory);
+            // var directories = Directory.EnumerateDirectories(searchDirectory);
+            // var subDirSize = (from directory in directories select GetDirSize(directory)).Sum();
+            // return subDirSize;
+            
+            DirectoryInfo dirInfo = new DirectoryInfo(@searchDirectory);
+            long dirSize = await Task.Run(() => dirInfo.EnumerateFiles( "*", SearchOption.AllDirectories).Sum(file => file.Length));
+            return dirSize;
+        }
 
-        private void DrawLayout()
+
+        private async void DrawLayout()
         {
             #region Header Formatting
 
@@ -380,8 +395,8 @@ namespace MultiPlay
 
             #region Draw Header
             GUILayout.BeginArea(fullRect);
-            if (isClient)
-                GUILayout.Label(clientHeaderText, headerStyle);
+            if (isClone)
+                GUILayout.Label(cloneHeaderText, headerStyle);
             else
                 GUILayout.Label(headerText, headerStyle);
             GUILayout.EndArea();
@@ -392,8 +407,8 @@ namespace MultiPlay
             if (EditorApplication.isPlaying)
             {
                 GUILayout.BeginArea(bodyRect);
-                EditorGUILayout.HelpBox($"{clientName}: Control panel is disabled while playing.", MessageType.Info);
-                ShowNotification(new GUIContent($"Running on {clientName}..."), 1);
+                EditorGUILayout.HelpBox($"{cloneName}: Control panel is disabled while playing.", MessageType.Info);
+                ShowNotification(new GUIContent($"Running on {cloneName}..."), 1);
                 if (GUILayout.Button("More cool tools...", skin.GetStyle("PanStoreLink")))
                 {
                     Application.OpenURL($"https://assetstore.unity.com/publishers/" + myPubID);
@@ -404,7 +419,7 @@ namespace MultiPlay
             }
             #endregion
 
-            if (isClient) //Client
+            if (isClone) //clone
             {
                 GUILayout.BeginArea(bodyRect);
                 if (GUILayout.Button("Sync"))
@@ -416,7 +431,7 @@ namespace MultiPlay
                 }
 
                 hasLibrary = false;//!IsSymbolic(LibraryPath);
-                string autoSyncCaption = !hasLibrary ? "Auto Sync" : "Auto Sync - Client created without [Link Library]";
+                string autoSyncCaption = !hasLibrary ? "Auto Sync" : "Auto Sync - clone created without [Link Library]";
                 GUI.enabled = !hasLibrary;
                 autoSync = GUILayout.Toggle(!hasLibrary ? autoSync : false, autoSyncCaption);
                 GUI.enabled = true;
@@ -435,15 +450,15 @@ namespace MultiPlay
                 if (isCreatingReferences)
                 {
                     isCreatingReferences = false;
-                    ShowNotification(new GUIContent("Creating Client..."));
+                    ShowNotification(new GUIContent("Creating clone..."));
                 }
                 else //Create References Or Launch
                 {
                     scrollPos = EditorGUILayout.BeginScrollView(scrollPos, GUILayout.ExpandWidth(true), GUILayout.Height(105/ppp), GUILayout.Width((Screen.width - pad*2)/ppp));
 
-                    for (int i = 1; i < maxNumberOfClients + 1; i++)
+                    for (int i = 1; i < maxNumberOfclones + 1; i++)
                     {
-                        string destinationPath = $"{ clonesPath }/{Application.productName}_[{i}]___Client".Replace(@"/", @"\");
+                        string destinationPath = $"{ clonesPath }/{Application.productName}_[{i}]_Clone".Replace(@"/", @"\");
                         var createLinkCaption = linkLibrary ? "- Ω" : string.Empty;
                         var libPath = Path.Combine(destinationPath, "Library");
                         var linkExists = Directory.Exists(libPath);
@@ -451,7 +466,7 @@ namespace MultiPlay
                         if( linkExists) 
                             openLinkCaption = IsSymbolic(libPath) ? "- Ω" : String.Empty;
                         
-                        string btnCaption = Directory.Exists(destinationPath) ? $"Launch Client [{i}] {openLinkCaption}" : $"Create Client [{i}] {createLinkCaption}";
+                        string btnCaption = Directory.Exists(destinationPath) ? $"Launch clone [{i}] {openLinkCaption}" : $"Create clone [{i}] {createLinkCaption}";
                         GUI.enabled = !Directory.Exists(destinationPath + "\\Temp");
 
                         GUILayout.BeginHorizontal();
@@ -462,7 +477,22 @@ namespace MultiPlay
                         {
                             SaveSettings();
                             LoadSettings();
-                            Debug.Log($"creating Client {i} in {destinationPath.Replace("\\\\", "\\")}");
+                            //Warn for unlin
+                            if (!linkLibrary)
+                            {
+                                var libSize = await GetDirSize($"{Application.dataPath}/../Library");
+                                string sizeInMB = libSize.ToSize(ByteExtensions.SizeUnits.MB);
+                                var msg = $"WARNING!! You're about to create a clone with {sizeInMB}. Are you sure you want to proceed?";
+
+                                var result = EditorUtility.DisplayDialog("Cloning with a library copy", msg, "Proceed", "Cancel");
+                                if (!result)
+                                {
+                                    Debug.Log($"Operation canceled by user.");
+                                    return;
+                                }
+                            }
+
+                            Debug.Log($"creating clone {i} in {destinationPath.Replace("\\\\", "\\")}");
 
                             /////////////
                             EditorSceneManager.SaveScene(SceneManager.GetActiveScene());
@@ -479,7 +509,7 @@ namespace MultiPlay
 
                             EditorSceneManager.SaveScene(SceneManager.GetActiveScene());
                             hasChanged = false;
-                            LaunchClient(destinationPath);
+                            Launchclone(destinationPath);
                             RemoveFromHub();
                             //Close();
 
@@ -492,7 +522,7 @@ namespace MultiPlay
                             if (GUILayout.Button("x", GUILayout.Height(buttonHeight), GUILayout.Width(35/ppp)))
                             {
                                 Debug.Log($"Deleting [{new DirectoryInfo(destinationPath).Name}]");
-                                ClearClient(destinationPath);
+                                Clearclone(destinationPath);
                             }
                         }
                         GUILayout.EndHorizontal();
@@ -515,8 +545,8 @@ namespace MultiPlay
                             GUILayout.BeginVertical(GUILayout.Height(Screen.height - pad * 2),GUILayout.Width(Screen.width - pad*2));
                             linkLibrary = GUILayout.Toggle(linkLibrary, "Link Library");
 
-                            maxNumberOfClients = EditorGUILayout.IntField(new GUIContent("Max Clients:", $"Maximum number of allowed clients is {maxClientsHardLimit}"), Mathf.Clamp(maxNumberOfClients, 1, maxClientsHardLimit));
-                            maxNumberOfClients = Mathf.Clamp(maxNumberOfClients, 1, maxClientsHardLimit);
+                            maxNumberOfclones = EditorGUILayout.IntField(new GUIContent("Max clones:", $"Maximum number of allowed clones is {maxclonesHardLimit}"), Mathf.Clamp(maxNumberOfclones, 1, maxclonesHardLimit));
+                            maxNumberOfclones = Mathf.Clamp(maxNumberOfclones, 1, maxclonesHardLimit);
 
                             clonesPath = EditorGUILayout.TextField(new GUIContent("Clones Path:", "Default Path of project clones"), clonesPath);
                             if (GUILayout.Button("Browse", GUILayout.Height(buttonHeight),GUILayout.Width((Screen.width - pad * 2)/ppp)))
@@ -534,7 +564,7 @@ namespace MultiPlay
                             var msgType = (linkLibrary) ? MessageType.Warning : MessageType.Info;
 
                             GUILayout.BeginHorizontal(GUILayout.Width((Screen.width - pad)/ppp));
-                            EditorGUILayout.HelpBox($"New clients will be created in [{new DirectoryInfo(clonesPath).Name}] {libraryTip}.", msgType);
+                            EditorGUILayout.HelpBox($"New clones will be created in [{new DirectoryInfo(clonesPath).Name}] {libraryTip}.", msgType);
                             GUILayout.EndHorizontal();
 
                             //GUILayout.Space(10);
@@ -561,9 +591,9 @@ namespace MultiPlay
         {
             int cnt = 0;
 
-            for (int i = 1; i < maxNumberOfClients + 1; i++)
+            for (int i = 1; i < maxNumberOfclones + 1; i++)
             {
-                string destinationPath = $"{ clonesPath }/{Application.productName}_[{i}]___Client".Replace(@"/", @"\");
+                string destinationPath = $"{ clonesPath }/{Application.productName}_[{i}]_Clone".Replace(@"/", @"\");
                 //if (i == 1) result = Directory.Exists(destinationPath);
                 //result = result || Directory.Exists(destinationPath);
 
@@ -576,9 +606,9 @@ namespace MultiPlay
         private static bool DoLinksLive()
         {
             bool result = false;
-            for (int i = 1; i < maxNumberOfClients + 1; i++)
+            for (int i = 1; i < maxNumberOfclones + 1; i++)
             {
-                string destinationPath = $"{ clonesPath }/{Application.productName}_[{i}]___Client".Replace(@"/", @"\");
+                string destinationPath = $"{ clonesPath }/{Application.productName}_[{i}]_Clone".Replace(@"/", @"\");
                 if (i == 1) result = Directory.Exists(destinationPath + "\\Temp");
 
                 result = result || Directory.Exists(destinationPath + "\\Temp");
@@ -631,7 +661,7 @@ namespace MultiPlay
                                     var value = (byte[])key.GetValue(k);
                                     var valueAsString = Encoding.ASCII.GetString(value);
 
-                                    if (valueAsString.EndsWith("Client"))
+                                    if (valueAsString.EndsWith("clone"))
                                     {
                                         //Debug.Log($"key deleted: {k} with value {valueAsString}");
                                         key.DeleteValue(k);
@@ -727,7 +757,7 @@ namespace MultiPlay
             }
         }
 
-        private void LaunchClient(string destPath)
+        private void Launchclone(string destPath)
         {
             try
             {
@@ -742,7 +772,7 @@ namespace MultiPlay
 
                 thread.Start();
                 //RemoveFromHub();
-                if(isClient) ClearConsole();
+                if(isClone) ClearConsole();
             }
             catch (Exception e) { Debug.LogError($"Unable to read temporary files due to unsufficient User Priviliges. Please contact your system administrator. \nDetails: {e.Message}"); }
         }
@@ -762,7 +792,7 @@ namespace MultiPlay
             }
         }
 
-        private static void ClearClient(string destPath)
+        private static void Clearclone(string destPath)
         {
             if (!Directory.Exists(destPath))
                 return;
@@ -774,27 +804,27 @@ namespace MultiPlay
                 thread = new Thread(delegate () { ExcuteCMD("cmd", args); });
                 thread?.Start();
             }
-            catch (Exception e) { Debug.LogError($"Error resetting clients\n{e.Message}"); }
+            catch (Exception e) { Debug.LogError($"Error resetting clones\n{e.Message}"); }
         }
 
-        private static void PurgeAllClients()
+        private static void PurgeAllclones()
         {
             try
             {
                 var tmpPath = new DirectoryInfo( //Path.GetTempPath());
                 $"{ clonesPath }");
 
-                foreach (var d in tmpPath.EnumerateDirectories("*Client*"))
+                foreach (var d in tmpPath.EnumerateDirectories("*clone*"))
                 {
                     //Debug.Log(d.FullName);
-                    ClearClient(d.FullName);
+                    Clearclone(d.FullName);
 
                     //if all failed, run this from windows command prompt
-                    //for / d % x in (% tmp %\*Client) do rd / s / q " % x"
+                    //for / d % x in (% tmp %\*clone) do rd / s / q " % x"
 
                 }
             }
-            catch (Exception e) { Debug.LogError($"Error resetting clients\n{e.Message}"); }
+            catch (Exception e) { Debug.LogError($"Error resetting clones\n{e.Message}"); }
         }
 
 
