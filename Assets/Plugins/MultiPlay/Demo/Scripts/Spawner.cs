@@ -3,32 +3,50 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using Random = UnityEngine.Random;
 
 namespace MultiPlay.Demo
 {
     public class Spawner : MonoBehaviour
     {
-        private Sprite[] Sprite;
+        private Texture2D[] textures;
+        private Camera cam;
+
         private void Awake()
         {
-            Sprite = (Sprite[])Resources.LoadAll("Sprites", typeof(Sprite));
+            LoadTextures();
+            cam = Camera.main;
+        }
+
+        private Texture2D[] LoadTextures() => Resources.LoadAll<Texture2D>("Textures");
+        
+
+        public void SpawnTextures()
+        {
+            textures ??= LoadTextures();
+            cam ??= Camera.main;
+            Random.InitState(DateTime.Now.Millisecond);
             
-            foreach (var t in Sprite)
+            Vector2 pos;
+            foreach (var tex in textures)
             {
-                Debug.Log(t.name);
+                var quad = GameObject.CreatePrimitive(PrimitiveType.Quad);
+                var mat = quad.GetComponent<MeshRenderer>().material =  new Material(Shader.Find("Transparent/Cutout/Soft Edge Unlit"));
+                mat.SetTexture("_MainTex",tex);
                 
-                // GameObject go = new GameObject("New Sprite");
-                // SpriteRenderer renderer = go.AddComponent<SpriteRenderer>();
-                // renderer.sprite = t;
+                quad.transform.localScale = Vector3.one * 3;
+
+                pos = GetPos(cam.orthographicSize - quad.transform.localScale.x/2);
+                quad.transform.localPosition = pos;
+                
+                Debug.Log(tex.name);
             }
         }
-        public void Shuffle(Vector3 pos)
+
+        private Vector2 GetPos(float range)
         {
-            Sprite ??= (Sprite[])Resources.LoadAll("Sprites", typeof(Sprite));
-            foreach (var t in Sprite)
-                Debug.Log(t.name);
-            
-            Debug.Log(pos.ToString());
+            Random.InitState(DateTime.Now.Millisecond);
+            return Random.insideUnitCircle * range;
         }
     }
 }

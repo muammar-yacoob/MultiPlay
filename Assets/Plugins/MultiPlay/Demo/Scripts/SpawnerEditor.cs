@@ -22,7 +22,7 @@ namespace MultiPlay.Demo
             DrawDefaultInspector();
             if (GUILayout.Button("Shuffle"))
             {
-                spawner.Shuffle(Random.insideUnitCircle);
+                spawner.SpawnTextures();
             }
             //Repaint();
         }
