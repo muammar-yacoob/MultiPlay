@@ -11,19 +11,17 @@ namespace MultiPlay.Demo
         private Spawner spawner;
         private Camera cam;
 
-        private void Awake()
-        {
-            spawner ??= (Spawner)target;
-            cam ??= Camera.main;
-        }
 
         public override void OnInspectorGUI()
         {
-            DrawDefaultInspector();
-            if (GUILayout.Button("Shuffle"))
+            spawner ??= (Spawner)target;
+            cam ??= Camera.main;
+            
+            if (GUILayout.Button("Spin"))
             {
-                spawner.SpawnTextures();
+                spawner.Spin();
             }
+            DrawDefaultInspector();
             //Repaint();
         }
     }

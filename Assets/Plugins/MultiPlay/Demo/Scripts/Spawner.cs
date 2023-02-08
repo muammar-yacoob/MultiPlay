@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 using Random = UnityEngine.Random;
 
 namespace MultiPlay.Demo
@@ -11,6 +12,8 @@ namespace MultiPlay.Demo
     {
         private Texture2D[] textures;
         private Camera cam;
+
+       private Color[] colors;// = {Color.cyan, Color.yellow, Color.magenta};
 
         private void Awake()
         {
@@ -47,6 +50,20 @@ namespace MultiPlay.Demo
         {
             Random.InitState(DateTime.Now.Millisecond);
             return Random.insideUnitCircle * range;
+        }
+
+        private Image arrow;
+        private int colorIndex;
+        public void Spin()
+        {
+            arrow ??= FindObjectOfType<Image>();
+            arrow.transform.Rotate(Vector3.forward,-45);
+
+            colorIndex++;
+            if(colorIndex >= 3)
+                colorIndex = 0;
+            
+            arrow.color = colors[colorIndex];
         }
     }
 }
