@@ -431,30 +431,31 @@ namespace MultiPlay
                         
                         if (GUILayout.Button(btnCaption, GUILayout.Height(buttonHeight)))
                         {
-                            SaveSettings();
-                            LoadSettings();
-                            //Warn for unlin
-                            if (!linkLibrary)
-                            {
-                                var libSize = await GetDirSize($"{Application.dataPath}/../Library");
-                                string sizeInMB = libSize.ToSize(ByteExtensions.SizeUnits.MB);
-                                var msg = $"WARNING!! You're about to create a clone with {sizeInMB}. Are you sure you want to proceed?";
-
-                                var result = EditorUtility.DisplayDialog("Cloning with a library copy", msg, "Proceed", "Cancel");
-                                if (!result)
-                                {
-                                    Debug.Log($"Operation canceled by user.");
-                                    return;
-                                }
-                            }
-
-                            Debug.Log($"creating clone {i} in {destinationPath.Replace("\\\\", "\\")}");
-
-                            /////////////
-                            EditorSceneManager.SaveScene(SceneManager.GetActiveScene());
                             if (!Directory.Exists(destinationPath))
                             {
+                                if (!linkLibrary)
+                                {
+                                    var libSize = await GetDirSize($"{Application.dataPath}/../Library");
+                                    string sizeInMB = libSize.ToSize(ByteExtensions.SizeUnits.MB);
+                                    var msg = $"WARNING!! You're about to create a clone with {sizeInMB}. Are you sure you want to proceed?";
+
+                                    var result = EditorUtility.DisplayDialog("Cloning with a library copy", msg, "Proceed", "Cancel");
+                                    if (!result)
+                                    {
+                                        Debug.Log($"Operation canceled by user.");
+                                        return;
+                                    }
+                                }
+
+                                Debug.Log($"creating clone {i} in {destinationPath.Replace("\\\\", "\\")}");
+                                
+                                SaveSettings();
+                                LoadSettings();
+                                
+                                EditorSceneManager.SaveScene(SceneManager.GetActiveScene());
+                                
                                 isCreatingReferences = false;
+                                
                                 CreateLink(destinationPath, "Assets");
                                 CreateLink(destinationPath, "ProjectSettings");
                                 CreateLink(destinationPath, "Packages");
