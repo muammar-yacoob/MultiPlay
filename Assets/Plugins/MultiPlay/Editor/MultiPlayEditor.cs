@@ -1,37 +1,28 @@
 ﻿using System;
-using System.Collections;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Win32;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Debug = UnityEngine.Debug;
+using static MultiPlay.Utils;
 
 namespace MultiPlay
 {
-    [InitializeOnLoad]
-    internal partial class MultiPlayEditor : UnityEditor.EditorWindow
+    internal class MultiPlayEditor : EditorWindow
     {
         #region privateMembers
         private string sourcePath;
 
         //Format
-        private Texture2D bgTexture;
         private Texture2D headerTexture;
-        private Texture2D bodyTexture;
         private static float windowMinWidth = 180;
         private static float windowMinHeight = 180;
         private static float windowMaxWidthExpanded = 420;
-        private static float windowMinHeightExpanded = 320;
-
-        private Color bgColor;
-        private Color bodyColor;
 
         private Rect fullRect;
         private Rect headerRect;
@@ -57,10 +48,9 @@ namespace MultiPlay
         private string cloneHeaderText;
 
         private static string myPubID = "46749";
-        private float timer;
         private Vector2 scrollPos;
         private bool showSettings;
-        private static MultiPlayEditor window;
+        public static MultiPlayEditor window;
 
         //Settings: Hard coded
         private MultiPlaySettings multiPlaySettingsAsset;
@@ -68,13 +58,11 @@ namespace MultiPlay
 
         //Settings Preferences
         private static int maxNumberOfclones;
-        private static string clonesPath;
+        public static string clonesPath;
         private bool linkLibrary;
         private bool hasLibrary;
         private static float ppp;
         private static float buttonHeight = 25;
-        private MultiPlay.Utils utils;
-        public string LibraryPath { get; private set; }
 
         #region License Setup
         private const Licence productLicence = Licence.Full;
@@ -82,7 +70,10 @@ namespace MultiPlay
         #endregion
         #endregion
 
-        private void Awake() => InitializeTextures();
+        private void Awake()
+        {
+            InitializeTextures();
+        }
 
         #region menus
         [MenuItem("Tools/" + licenseMenuCaption + "/clone Manager &C", false, 10)]
@@ -92,9 +83,13 @@ namespace MultiPlay
             try
             {
                 string windowTitle = (productLicence == Licence.Full) ? "MultiPlay" : "DualPlay";
-                if(window == null)
+                if (window == null)
+                {
                     window = GetWindow<MultiPlayEditor>(windowTitle, typeof(SceneView));
-                window.titleContent = new GUIContent(windowTitle, EditorGUIUtility.ObjectContent(CreateInstance<MultiPlayEditor>(), typeof(MultiPlayEditor)).image);
+                }
+
+                window.titleContent = new GUIContent(windowTitle,
+                    EditorGUIUtility.ObjectContent(CreateInstance<MultiPlayEditor>(), typeof(MultiPlayEditor)).image);
                 if (isClone)
                 {
                     window.minSize = new Vector2(windowMinWidth, windowMinHeight);
@@ -107,7 +102,10 @@ namespace MultiPlay
 
                 window.Show();
             }
-            catch (Exception) { }
+            catch (Exception e)
+            {
+                Debug.Log(e.Message);
+            }
         }
 
 
@@ -115,35 +113,7 @@ namespace MultiPlay
         [MenuItem("Tools/" + licenseMenuCaption + "/Clean Up", false, 11)]
         static void Menu_Cleanup()
         {
-            int clonesFound = DoLinksExist();
-
-            string msg = $"Clearing cached references to {clonesFound} clones, are you sure you want to proceed?";
-
-
-            if (clonesFound == 0)
-                msg = $"No clones were found in {clonesPath}, Try clear references anyway?";
-
-            if (DoLinksLive())
-            {
-                Debug.LogWarning("WARNING: Live clones were detected! You Should close them before clearing references; Otherwise, Unity may crash!");
-                msg = "WARNING!! Make sure ALL cloneS are CLOSED before proceeding!!";
-            }
-
-            if (EditorUtility.DisplayDialog("Clearing References", msg, "Proceed", "Cancel"))
-            {
-                try
-                {
-                    Debug.Log("Cleaning cache...");
-                    EditorUtility.DisplayProgressBar("Processing..", "Shows a progress", 0.9f);
-                    PurgeAllclones();
-                    EditorUtility.ClearProgressBar();
-                    Debug.Log("MultiPlay: References cleared successfully");
-                    RemoveFromHub();
-                    window?.Repaint();
-                    EditorUtility.DisplayDialog("Success", "All Clear!", "OK");
-                }
-                catch (Exception e) { Debug.LogError(e.Message); }
-            }
+            CleanUpMenuItem.CleanUpClones();
         }
 
         [MenuItem("Tools/" + licenseMenuCaption + "/Clean Up", true, 11)]
@@ -197,13 +167,9 @@ namespace MultiPlay
 
                 //RescaleUI();
 
-                int cnt = Application.dataPath.Split('/').Length;
-                string appFolderName = Application.dataPath.Split('/')[cnt - 2];
-                isClone = IsSymbolic(Application.dataPath);// appFolderName.EndsWith("_Clone");
+                isClone = IsSymbolic(Application.dataPath);
                 if (isClone)
                 {
-                    bool indexHasParsed = Int32.TryParse(appFolderName.Substring(appFolderName.IndexOf('[') + 1, 1), out cloneIndex);
-                    LibraryPath = Application.dataPath + "/../Library";
                 }
 
                 cloneHeaderText = (productLicence == Licence.Full) ? $"clone [{cloneIndex}]" : $"clone";
@@ -213,7 +179,7 @@ namespace MultiPlay
                 lastSyncTime = DateTime.Now;
 
                 InitializeTextures();
-                RemoveFromHub();
+                CleanUpMenuItem.RemoveFromHub();
                 //Debug.Log($"lastWrite: {lastWriteTime}, lastSync: {lastSyncTime}");
                 EditorApplication.update += OnEditorUpdate;
 
@@ -223,7 +189,7 @@ namespace MultiPlay
 
                 if(productLicence == Licence.Full)
                 {
-                    cloneIndex = Utils.GetCurrentCloneIndex();
+                    cloneIndex = GetCurrentCloneIndex();
                     cloneName = cloneIndex == 0 ? "Main" : $"clone[{cloneIndex}]";
                 }
             }
@@ -238,7 +204,6 @@ namespace MultiPlay
             windowMinWidth /= ppp;
             windowMinHeight /= ppp;
             windowMaxWidthExpanded /= ppp;
-            windowMinHeightExpanded /= ppp;
         }
 
         protected virtual void OnDisable()
@@ -313,7 +278,7 @@ namespace MultiPlay
                             //if (cloneIndex > 1)
                             {
                                 //Debug.Log("Lib: " + copyLibrary + ". Refreshing...");
-                                System.Threading.Thread.Sleep(cloneIndex * 50); //<< inducing some delay here to prevent Editor crashing
+                                Thread.Sleep(cloneIndex * 50); //<< inducing some delay here to prevent Editor crashing
 
                                 hasChanged = false;
                                 lastSyncTime = DateTime.Now;
@@ -346,13 +311,6 @@ namespace MultiPlay
                 headerTexture = (productLicence == Licence.Full) ? Resources.Load<Texture2D>("icons/MP_EditorHeader") : Resources.Load<Texture2D>("icons/DP_EditorHeader");
                 skin = Resources.Load<GUISkin>("guiStyles/Default");
 
-                bgTexture = new Texture2D(1, 1);
-                bgTexture.SetPixel(0, 0, bgColor);
-                bgTexture.Apply();
-
-                bodyTexture = new Texture2D(1, 1);
-                bodyTexture.SetPixel(0, 0, bodyColor);
-                bodyTexture.Apply();
             }
             catch (Exception e) { Debug.LogError($"{e.Message}"); }
         }
@@ -378,11 +336,10 @@ namespace MultiPlay
         {
             #region Header Formatting
 
-            if (bgTexture == null || headerTexture == null || skin == null)
+            if (headerTexture == null || skin == null)
                 InitializeTextures();
 
             fullRect = new Rect(pad, pad, Screen.width - pad * 2, Screen.height - pad * 2);
-            GUI.DrawTexture(fullRect, bgTexture);
 
             //Header
             headerRect = new Rect(((Screen.width - headerTexture.width * headerTexScale) /ppp)- (20) ,pad, headerTexture.width * headerTexScale, headerTexture.height * headerTexScale);
@@ -391,7 +348,6 @@ namespace MultiPlay
             //Body
             bodyRect = new Rect(pad, headerRect.height + pad, Screen.width - pad * 2, Screen.height - headerRect.height - pad * 2);
             //bodyRect /= ppp;
-            GUI.DrawTexture(bodyRect, bodyTexture);
 
             #region Draw Header
             GUILayout.BeginArea(fullRect);
@@ -510,11 +466,10 @@ namespace MultiPlay
                             EditorSceneManager.SaveScene(SceneManager.GetActiveScene());
                             hasChanged = false;
                             Launchclone(destinationPath);
-                            RemoveFromHub();
+                            CleanUpMenuItem.RemoveFromHub();
                             //Close();
 
                             GUI.enabled = true;
-                            ///
                         }
                         if (Directory.Exists(destinationPath))
                         {
@@ -522,7 +477,7 @@ namespace MultiPlay
                             if (GUILayout.Button("x", GUILayout.Height(buttonHeight), GUILayout.Width(35/ppp)))
                             {
                                 Debug.Log($"Deleting [{new DirectoryInfo(destinationPath).Name}]");
-                                Clearclone(destinationPath);
+                                CleanUpMenuItem.ClearClone(destinationPath);
                             }
                         }
                         GUILayout.EndHorizontal();
@@ -587,7 +542,7 @@ namespace MultiPlay
             return pathInfo.Attributes.HasFlag(FileAttributes.ReparsePoint);
         }
 
-        private static int DoLinksExist()
+        public static int DoLinksExist()
         {
             int cnt = 0;
 
@@ -603,7 +558,7 @@ namespace MultiPlay
             return cnt;
         }
 
-        private static bool DoLinksLive()
+        public static bool DoLinksLive()
         {
             bool result = false;
             for (int i = 1; i < maxNumberOfclones + 1; i++)
@@ -634,72 +589,12 @@ namespace MultiPlay
             }
         }
 
-        private static void RemoveFromHub()
-        {
-            try
-            {
-                string kFound = string.Empty;
-                string keyName = @"Software\Unity Technologies\Unity Editor 5.x";
-                using (RegistryKey key = Registry.CurrentUser.OpenSubKey(keyName, true))
-                {
-                    if (key == null)
-                    {
-                        //Debug.Log("Editor version not found");
-                    }
-                    else
-                    {
-                        string[] kvals = key.GetValueNames();
-                        foreach (string k in kvals)
-                        {
-                            //if (k.Contains("RecentlyUsedProjectPaths-0"))
-                            if (k.Contains("RecentlyUsedProjectPaths-"))
-                            {
-
-
-                                if (key.GetValueKind(k) == RegistryValueKind.Binary)
-                                {
-                                    var value = (byte[])key.GetValue(k);
-                                    var valueAsString = Encoding.ASCII.GetString(value);
-
-                                    if (valueAsString.EndsWith("clone"))
-                                    {
-                                        //Debug.Log($"key deleted: {k} with value {valueAsString}");
-                                        key.DeleteValue(k);
-                                        //kFound = k;
-                                        //break;
-                                    }
-
-                                }
-                            }
-                        }
-                        // Debug.Log($"{kFound} deleted");
-                    }
-                }
-            }
-            catch (Exception e) { Debug.LogError($"Unable to clear system cache due to unsufficient User Priviliges. Please contact your system administrator. \nDetails: {e.Message}"); }
-        }
-
-        private void CopyStartupConfig(string destPath)
-        {
-            try
-            {
-                string startupFile = "LastSceneManagerSetup.txt";
-                string args = $"/c copy /y {sourcePath}\\Library\\{startupFile} {startupFile}\\Library\\{startupFile}";
-                var thread = new Thread(delegate () { ExcuteCMD("cmd", args); });
-                thread.Start();
-            }
-            catch (Exception exx)
-            {
-                Debug.LogError($"Links failed. You do not have sufficient previliges to write to windows temporary files. Please contact your system administrator\n{exx.Message}");
-
-            }
-        }
         private void CreateLink(string destPath, string subDirectory)
         {
             if (!Directory.Exists(destPath))
                 Directory.CreateDirectory(destPath);
 
-            string cmd, args = String.Empty;
+            string cmd, args;
             try
             {
                 switch (Application.platform)
@@ -722,7 +617,8 @@ namespace MultiPlay
                 }
 
 
-                var thread = new Thread(delegate () { ExcuteCMD(cmd, args); });
+                var args1 = args;
+                var thread = new Thread(delegate () { ExcuteCMD(cmd, args1); });
                 thread.Start();
             }
             catch (Exception e)
@@ -732,7 +628,8 @@ namespace MultiPlay
                 try
                 {
                     args = $"/c mklink /d {destPath}\\{subDirectory} {sourcePath}\\{subDirectory}";
-                    var thread = new Thread(delegate () { ExcuteCMD("cmd", args); });
+                    var args1 = args;
+                    var thread = new Thread(delegate () { ExcuteCMD("cmd", args1); });
                     thread.Start();
                 }
                 catch (Exception ex)
@@ -761,7 +658,6 @@ namespace MultiPlay
         {
             try
             {
-                string currentUnityVersion = Application.unityVersion;
                 string editorPath = GetAppPath(Application.platform);
 
                 string editorArgs = $"-DisableDirectoryMonitor ‑ignorecompilererrors -disable-assembly-updater -silent-crashes";
@@ -792,49 +688,20 @@ namespace MultiPlay
             }
         }
 
-        private static void Clearclone(string destPath)
-        {
-            if (!Directory.Exists(destPath))
-                return;
-
-            Thread thread = null;
-            try
-            {
-                string args = $"/c rd /s /q \"{destPath}\"";
-                thread = new Thread(delegate () { ExcuteCMD("cmd", args); });
-                thread?.Start();
-            }
-            catch (Exception e) { Debug.LogError($"Error resetting clones\n{e.Message}"); }
-        }
-
-        private static void PurgeAllclones()
-        {
-            try
-            {
-                var tmpPath = new DirectoryInfo( //Path.GetTempPath());
-                $"{ clonesPath }");
-
-                foreach (var d in tmpPath.EnumerateDirectories("*clone*"))
-                {
-                    //Debug.Log(d.FullName);
-                    Clearclone(d.FullName);
-
-                    //if all failed, run this from windows command prompt
-                    //for / d % x in (% tmp %\*clone) do rd / s / q " % x"
-
-                }
-            }
-            catch (Exception e) { Debug.LogError($"Error resetting clones\n{e.Message}"); }
-        }
+        
 
 
         private static void ClearConsole()
         {
-            var logEntries = System.Type.GetType("UnityEditor.LogEntries, UnityEditor.dll");
-            var clearMethod = logEntries.GetMethod("Clear", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public);
-            clearMethod.Invoke(null, null);
+            var logEntries = Type.GetType("UnityEditor.LogEntries, UnityEditor.dll");
+            if (logEntries != null)
+            {
+                var clearMethod = logEntries.GetMethod("Clear", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public);
+                clearMethod?.Invoke(null, null);
+            }
         }
-        static void ExcuteCMD(string prog, string args)
+
+        public static void ExcuteCMD(string prog, string args)
         {
             if (prog == null) return;
             try
@@ -847,8 +714,6 @@ namespace MultiPlay
                 startInfo.FileName = prog;
                 startInfo.Arguments = args;
 
-                string tmp = prog + args;
-                //Debug.LogError(tmp);
                 process.StartInfo = startInfo;
                 process.Start();
 
@@ -856,12 +721,12 @@ namespace MultiPlay
 
                 process.Close();
             }
-            catch (Exception) { }
-            finally { RemoveFromHub(); }
+            catch (Exception e)
+            {
+                Debug.Log(e.Message);
+            }
+            finally { CleanUpMenuItem.RemoveFromHub(); }
         }
-
-        private IEnumerator Sleep(float timer)
-        { yield return new WaitForSeconds(timer); }
 
         private enum Licence { Default, Full }
     }
