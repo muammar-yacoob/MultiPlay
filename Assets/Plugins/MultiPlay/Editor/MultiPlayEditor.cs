@@ -9,61 +9,11 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.UIElements;
 using Debug = UnityEngine.Debug;
 using static MultiPlay.Utils;
 
 namespace MultiPlay
 {
-    internal interface IMultiPlayEditor
-    {
-        void SaveSettings();
-        bool Equals(object other);
-        int GetHashCode();
-        string ToString();
-        int GetInstanceID();
-        string name { get; set; }
-        HideFlags hideFlags { get; set; }
-        VisualElement rootVisualElement { get; }
-        bool wantsMouseMove { get; set; }
-        bool wantsMouseEnterLeaveWindow { get; set; }
-        bool wantsLessLayoutEvents { get; set; }
-        bool autoRepaintOnSceneChange { get; set; }
-        bool maximized { get; set; }
-        bool hasFocus { get; }
-        bool docked { get; }
-        bool hasUnsavedChanges { get; set; }
-        string saveChangesMessage { get; set; }
-        Vector2 minSize { get; set; }
-        Vector2 maxSize { get; set; }
-        string title { get; set; }
-        GUIContent titleContent { get; set; }
-        int depthBufferBits { get; set; }
-        int antiAlias { get; set; }
-        Rect position { get; set; }
-        void SetDirty();
-        void BeginWindows();
-        void EndWindows();
-        void ShowNotification(GUIContent notification);
-        void ShowNotification(GUIContent notification, double fadeoutWait);
-        void RemoveNotification();
-        void ShowTab();
-        void Focus();
-        void ShowUtility();
-        void ShowPopup();
-        void ShowModalUtility();
-        void ShowAsDropDown(Rect buttonRect, Vector2 windowSize);
-        void Show();
-        void Show(bool immediateDisplay);
-        void ShowAuxWindow();
-        void ShowModal();
-        void SaveChanges();
-        void Close();
-        void Repaint();
-        bool SendEvent(Event e);
-        IEnumerable<Type> GetExtraPaneTypes();
-    }
-
     internal sealed class MultiPlayEditor : EditorWindow
     {
         #region privateMembers
