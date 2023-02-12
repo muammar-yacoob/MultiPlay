@@ -17,7 +17,7 @@ namespace MultiPlay
             if (clonesFound == 0)
             {
                 if (!EditorUtility.DisplayDialog("Clearing References",
-                        $"No clones were found in {MultiPlayEditor.clonesPath}, Try clear references anyway?",
+                        $"No clones were found in {Settings.clonesPath}, Try clear references anyway?",
                         "Proceed", "Cancel"))
                     return;
             }
@@ -44,7 +44,7 @@ namespace MultiPlay
                 EditorUtility.ClearProgressBar();
                 Debug.Log("MultiPlay: References cleared successfully");
                 RemoveFromHub();
-                MultiPlayEditor.window?.Repaint();
+                MultiPlayEditor.window.Repaint();
                 EditorUtility.DisplayDialog("Success", "All Clear!", "OK");
             }
             catch (Exception e)
@@ -114,7 +114,7 @@ namespace MultiPlay
         {
             try
             {
-                var tmpPath = new DirectoryInfo($"{MultiPlayEditor.clonesPath}");
+                var tmpPath = new DirectoryInfo($"{Settings.clonesPath}");
 
                 foreach (var dir in tmpPath.EnumerateDirectories("*clone*"))
                 {
