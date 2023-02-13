@@ -162,10 +162,7 @@ namespace MultiPlay
 
                 //RescaleUI();
 
-                isClone = IsSymbolic(Application.dataPath);
-                if (isClone)
-                {
-                }
+                isClone = Utils.IsClone();
 
                 cloneHeaderText = (Settings.productLicence == Settings.Licence.Full) ? $"clone [{cloneIndex}]" : $"clone";
 

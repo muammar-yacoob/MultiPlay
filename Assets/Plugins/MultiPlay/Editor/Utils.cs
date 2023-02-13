@@ -1,8 +1,9 @@
+using System.IO;
 using UnityEngine;
 
 namespace MultiPlay
 {
-    public class Utils
+    public static class Utils
     {
         private static string GetAppFolder()
         {
@@ -13,7 +14,7 @@ namespace MultiPlay
         {
             int clientIndex = 0;
             string appFolderName = GetAppFolder();
-            if (IsClient)
+            if (IsClone())
             {
                 clientIndex = 1;
 
@@ -26,6 +27,19 @@ namespace MultiPlay
             return clientIndex;
         }
 
-        public static bool IsClient => GetAppFolder().EndsWith("___Client");
+        /// <summary>
+        /// Checks whether or not the project is a Clone
+        /// </summary>
+        /// <param name="path">Path to Project directory</param>
+        /// <returns></returns>
+        public static bool IsClone(string path = null)
+        {
+            path ??=  Application.dataPath;
+            if (!Directory.Exists(path)) return false;
+            
+            path += "/Assets";
+            FileInfo pathInfo = new FileInfo(path);
+            return pathInfo.Attributes.HasFlag(FileAttributes.ReparsePoint);
+        }
     }
 }
