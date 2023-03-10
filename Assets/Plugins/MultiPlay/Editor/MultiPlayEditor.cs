@@ -45,6 +45,9 @@ namespace MultiPlay
         private object cloneName;
         private string headerText;
         private GUIStyle headerStyle;
+        private GUIStyle linkStyle;
+        private GUIStyle nonLinkStyle;
+        
         private Color defaultFontColor;
         private string cloneHeaderText;
 
@@ -54,7 +57,6 @@ namespace MultiPlay
         public static MultiPlayEditor window;
 
 
-        private bool hasLibrary;
         private static float ppp;
         private static float buttonHeight = 25;
 
@@ -142,6 +144,8 @@ namespace MultiPlay
             try
             {
                 EditorApplication.playModeStateChanged += HandleOnPlayModeChanged;
+                EditorApplication.projectChanged += UpdateScene;
+                EditorApplication.hierarchyChanged += UpdateScene;
 
                 sceneFilePath = Application.dataPath + "/../" + SceneManager.GetActiveScene().path;
                 sceneFilePath = sceneFilePath.Replace(@"/", @"\");
@@ -156,7 +160,9 @@ namespace MultiPlay
 
                 headerText = (Settings.productLicence == Settings.Licence.Full) ? "MultiPlay" : "DualPlay";
                 headerStyle = (Settings.productLicence == Settings.Licence.Full) ? skin.GetStyle("PanHeaderFull") : skin.GetStyle("PanHeaderDefault");
-
+                linkStyle = skin.GetStyle("SymLink");
+                nonLinkStyle = skin.GetStyle("NoLink");
+                
                 defaultFontColor = GUI.contentColor;
 
                 //RescaleUI();
@@ -170,8 +176,8 @@ namespace MultiPlay
 
                 InitializeTextures();
                 CleanUpMenuItem.RemoveFromHub();
-                //Debug.Log($"lastWrite: {lastWriteTime}, lastSync: {lastSyncTime}");
-                //EditorApplication.update += OnEditorUpdate;
+                Debug.Log($"lastWrite: {lastWriteTime}, lastSync: {lastSyncTime}");
+                
 
                 Settings.settingsAsset = Resources.Load<MultiPlaySettings>("settings/MultiPlaySettings");//there's already one scriptable object asset provided and you don't actually need to create another one, just find it and change its variables
                 Settings.LoadSettings(this);
@@ -182,7 +188,8 @@ namespace MultiPlay
                     cloneIndex = GetCurrentCloneIndex();
                     cloneName = cloneIndex == 0 ? "Main" : $"clone[{cloneIndex}]";
                 }
-                cloneHeaderText = (Settings.productLicence == Settings.Licence.Full) ? $"Clone [{cloneIndex}]" : $"Clone";
+                string libraryText = Utils.IsLibraryLinked() ? " - Ω" : String.Empty;
+                cloneHeaderText = (Settings.productLicence == Settings.Licence.Full) ? $"Clone [{cloneIndex}]{libraryText}" : $"Clone";
             }
             catch (Exception ex) { Debug.LogError($"{ex.Message}"); }
         }
@@ -197,19 +204,12 @@ namespace MultiPlay
             windowMaxWidthExpanded /= ppp;
         }
 
-        private void OnDisable()
-        { 
-            Settings.SaveSettings();
-            //EditorApplication.update -= OnEditorUpdate;
-            EditorApplication.playModeStateChanged -= HandleOnPlayModeChanged;
-            
-        }
-
         private void OnDestroy()
         {
             Settings.SaveSettings();
             EditorApplication.playModeStateChanged -= HandleOnPlayModeChanged;
-            //EditorApplication.update -= OnEditorUpdate;
+            EditorApplication.projectChanged -= UpdateScene;
+            EditorApplication.hierarchyChanged -= UpdateScene;
         }
 
 
@@ -227,27 +227,22 @@ namespace MultiPlay
         }
 
 
-        // private void OnEditorUpdate()
-        // {
-        //     if (isClone) CheckIfSceneChanged();
-        // }
-
-        private void CheckIfSceneChanged()
+        private void UpdateScene()
         {
+            if (!isClone) return;
+            Debug.Log("Changes Detected");
             try
             {
                 lastWriteTime = File.GetLastWriteTime(sceneFilePath);
                 if (lastWriteTime > lastSyncTime) //scene changed
                 {
-
                     if (autoSync)
                     {
                         try
                         {
-                            //if (cloneIndex > 1)
                             {
                                 //Debug.Log("Lib: " + copyLibrary + ". Refreshing...");
-                                Thread.Sleep(cloneIndex * 50); //<< inducing some delay here to prevent Editor crashing
+                                //Thread.Sleep(cloneIndex * 500); //<< inducing some delay here to prevent Editor crashing
 
                                 hasChanged = false;
                                 lastSyncTime = DateTime.Now;
@@ -321,6 +316,12 @@ namespace MultiPlay
             pad /= ppp;
             
             GUILayout.BeginArea(fullRect);
+
+            if (isClone)
+            {
+                headerStyle = IsLibraryLinked() ? linkStyle : nonLinkStyle;
+            }
+
             GUILayout.Label(isClone ? cloneHeaderText : headerText, headerStyle);
             GUILayout.EndArea();
         }
@@ -359,10 +360,10 @@ namespace MultiPlay
                     ReloadScene();
                 }
 
-                hasLibrary = false;//!IsSymbolic(LibraryPath);
-                string autoSyncCaption = !hasLibrary ? "Auto Sync" : "Auto Sync - clone created without [Link Library]";
-                GUI.enabled = !hasLibrary;
-                autoSync = GUILayout.Toggle(!hasLibrary && autoSync, autoSyncCaption);
+                string autoSyncCaption = !IsLibraryLinked() ? "Auto Sync" : "Auto Sync - clone created without [Link Library]";
+                //GUI.enabled = !Utils.IsLibraryLinked();
+                //autoSync = GUILayout.Toggle(!IsLibraryLinked() && autoSync, autoSyncCaption);
+                autoSync = GUILayout.Toggle(autoSync, autoSyncCaption);
                 GUI.enabled = true;
 
                 if (hasChanged) EditorGUILayout.HelpBox("Changes from original build were detected. Make sure to Sync before running", MessageType.Warning);

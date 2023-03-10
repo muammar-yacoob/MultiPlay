@@ -32,12 +32,21 @@ namespace MultiPlay
         /// </summary>
         /// <param name="path">Path to Project directory</param>
         /// <returns></returns>
-        public static bool IsClone(string path = null)
+        public static bool IsClone()
         {
-            path ??=  Application.dataPath;
-            if (!Directory.Exists(path)) return false;
+            var assetsPath =  Application.dataPath;
+            if (!Directory.Exists(assetsPath)) return false;
             
-            FileInfo pathInfo = new FileInfo(path);
+            FileInfo pathInfo = new FileInfo(assetsPath);
+            return pathInfo.Attributes.HasFlag(FileAttributes.ReparsePoint);
+        }
+        
+        public static bool IsLibraryLinked()
+        {
+            var libraryPath =  $"{Application.dataPath}/../Library";
+            if (!Directory.Exists(libraryPath)) return false;
+            
+            FileInfo pathInfo = new FileInfo(libraryPath);
             return pathInfo.Attributes.HasFlag(FileAttributes.ReparsePoint);
         }
     }
