@@ -37,7 +37,6 @@ namespace MultiPlay
             path ??=  Application.dataPath;
             if (!Directory.Exists(path)) return false;
             
-            path += "/Assets";
             FileInfo pathInfo = new FileInfo(path);
             return pathInfo.Attributes.HasFlag(FileAttributes.ReparsePoint);
         }

@@ -96,7 +96,7 @@ namespace MultiPlay
                 }
 
                 window.Show();
-            }
+            }  
             catch (Exception e)
             {
                 Debug.Log(e.Message);
@@ -116,7 +116,6 @@ namespace MultiPlay
         {
             int cnt = Application.dataPath.Split('/').Length;
             string appFolderName = Application.dataPath.Split('/')[cnt - 2];
-            isClone = appFolderName.EndsWith("_Clone");
 
             return !Application.isPlaying && !isClone;
         }
@@ -164,7 +163,6 @@ namespace MultiPlay
 
                 isClone = Utils.IsClone();
 
-                cloneHeaderText = (Settings.productLicence == Settings.Licence.Full) ? $"clone [{cloneIndex}]" : $"clone";
 
                 //reset status
                 hasChanged = false;
@@ -173,7 +171,7 @@ namespace MultiPlay
                 InitializeTextures();
                 CleanUpMenuItem.RemoveFromHub();
                 //Debug.Log($"lastWrite: {lastWriteTime}, lastSync: {lastSyncTime}");
-                EditorApplication.update += OnEditorUpdate;
+                //EditorApplication.update += OnEditorUpdate;
 
                 Settings.settingsAsset = Resources.Load<MultiPlaySettings>("settings/MultiPlaySettings");//there's already one scriptable object asset provided and you don't actually need to create another one, just find it and change its variables
                 Settings.LoadSettings(this);
@@ -184,6 +182,7 @@ namespace MultiPlay
                     cloneIndex = GetCurrentCloneIndex();
                     cloneName = cloneIndex == 0 ? "Main" : $"clone[{cloneIndex}]";
                 }
+                cloneHeaderText = (Settings.productLicence == Settings.Licence.Full) ? $"Clone [{cloneIndex}]" : $"Clone";
             }
             catch (Exception ex) { Debug.LogError($"{ex.Message}"); }
         }
@@ -199,9 +198,9 @@ namespace MultiPlay
         }
 
         private void OnDisable()
-        {
+        { 
             Settings.SaveSettings();
-            EditorApplication.update -= OnEditorUpdate;
+            //EditorApplication.update -= OnEditorUpdate;
             EditorApplication.playModeStateChanged -= HandleOnPlayModeChanged;
             
         }
@@ -210,7 +209,7 @@ namespace MultiPlay
         {
             Settings.SaveSettings();
             EditorApplication.playModeStateChanged -= HandleOnPlayModeChanged;
-            EditorApplication.update -= OnEditorUpdate;
+            //EditorApplication.update -= OnEditorUpdate;
         }
 
 
@@ -228,10 +227,10 @@ namespace MultiPlay
         }
 
 
-        private void OnEditorUpdate()
-        {
-            if (isClone) CheckIfSceneChanged();
-        }
+        // private void OnEditorUpdate()
+        // {
+        //     if (isClone) CheckIfSceneChanged();
+        // }
 
         private void CheckIfSceneChanged()
         {
@@ -302,29 +301,36 @@ namespace MultiPlay
         }
 
 
-        private async void DrawLayout()
+        private void DrawLayout()
         {
-            #region Header Formatting
-
+            ppp = EditorGUIUtility.pixelsPerPoint;
+            
+            fullRect = new Rect(pad, pad, Screen.width - pad * 2, Screen.height - pad * 2); 
+            DrawHeader(); 
+            DrawBody();
+        }
+ 
+        private void DrawHeader() 
+        {
             if (headerTexture == null || skin == null)
-                InitializeTextures();
-
-            fullRect = new Rect(pad, pad, Screen.width - pad * 2, Screen.height - pad * 2);
+                InitializeTextures();   
 
             //Header
-            headerRect = new Rect(((Screen.width - headerTexture.width * headerTexScale) /ppp)- (20) ,pad, headerTexture.width * headerTexScale, headerTexture.height * headerTexScale);
-            GUI.DrawTexture(headerRect, headerTexture);
+             headerRect = new Rect(((Screen.width - headerTexture.width * headerTexScale) /ppp)- (20) ,pad, headerTexture.width * headerTexScale, headerTexture.height * headerTexScale);
+             GUI.DrawTexture(headerRect, headerTexture);
             pad /= ppp;
-            //Body
-            bodyRect = new Rect(pad, headerRect.height + pad, Screen.width - pad * 2, Screen.height - headerRect.height - pad * 2);
-            //bodyRect /= ppp;
-
-            #region Draw Header
+            
             GUILayout.BeginArea(fullRect);
             GUILayout.Label(isClone ? cloneHeaderText : headerText, headerStyle);
             GUILayout.EndArea();
-            #endregion
-            #endregion
+        }
+
+        private async void DrawBody()
+        {
+                        
+            //Body
+            bodyRect = new Rect(pad, headerRect.height + pad, Screen.width - pad * 2, Screen.height - headerRect.height - pad * 2);
+
 
             #region EditorPlaying
             if (EditorApplication.isPlaying)
@@ -504,7 +510,6 @@ namespace MultiPlay
                 GUILayout.EndArea();
             }
         }
-
         private bool IsSymbolic(string path)
         {
             FileInfo pathInfo = new FileInfo(path);

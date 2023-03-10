@@ -7,6 +7,7 @@ using UnityEngine.UI;
 
 namespace MultiPlay.Demo
 {
+    [ExecuteInEditMode]
     public class Spinner : MonoBehaviour
     {
         [SerializeField] private Color[] colors; 
@@ -17,7 +18,11 @@ namespace MultiPlay.Demo
 
         public void Spin()
         {
-            icons ??= FindObjectsOfType<Image>().ToList();
+            if (icons == null || icons.Count == 0)
+            {
+                icons = FindObjectsOfType<Image>().ToList();
+            }
+
             icons.ForEach(i => i.transform.Rotate(Vector3.forward, -45, Space.Self));
             
             colorIndex++;
