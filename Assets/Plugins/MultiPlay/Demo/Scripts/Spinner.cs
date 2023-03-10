@@ -7,14 +7,9 @@ using UnityEngine.UI;
 
 namespace MultiPlay.Demo
 {
-    [ExecuteInEditMode]
     public class Spinner : MonoBehaviour
     {
-        [SerializeField] private Color[] colors; 
-        private Texture2D[] textures;
-        private Camera cam;
         private List<Image> icons;
-        private int colorIndex;
 
         public void Spin()
         {
@@ -24,12 +19,6 @@ namespace MultiPlay.Demo
             }
 
             icons.ForEach(i => i.transform.Rotate(Vector3.forward, -45, Space.Self));
-            
-            colorIndex++;
-            if (colorIndex >= 3)
-                colorIndex = 0;
-
-            icons.FirstOrDefault(i => i.name == "arrow")!.color = colors[colorIndex];
             EditorSceneManager.SaveScene(SceneManager.GetActiveScene());
         }
     }
