@@ -1,13 +1,17 @@
-﻿    using UnityEngine;
+﻿    using System;
+    using UnityEngine;
     using UnityEditor;
     using System.IO;
+    using UnityEditor.SceneManagement;
+    using UnityEngine.SceneManagement;
 
-namespace MultiPlay
+    namespace MultiPlay
 {
     [InitializeOnLoad]
     public class SceneChangeDetector
     {
         private static FileSystemWatcher watcher;
+        public static event Action<string> SceneChanged;
 
         static SceneChangeDetector()
         {
@@ -27,7 +31,7 @@ namespace MultiPlay
         {
             if (e.FullPath.EndsWith(".unity"))
             {
-                Debug.Log("Scene hierarchy changed");
+                SceneChanged?.Invoke(e.Name);
             }
         }
 
@@ -35,7 +39,7 @@ namespace MultiPlay
         {
             if (e.FullPath.EndsWith(".unity"))
             {
-                Debug.Log("Scene hierarchy changed");
+                SceneChanged?.Invoke(e.Name);
             }
         }
     }

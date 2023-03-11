@@ -44,8 +44,8 @@ namespace MultiPlay
                 EditorUtility.ClearProgressBar();
                 Debug.Log("MultiPlay: References cleared successfully");
                 RemoveFromHub();
-                MultiPlayEditor.window.Repaint();
                 EditorUtility.DisplayDialog("Success", "All Clear!", "OK");
+                MultiPlayEditor.window.Repaint();
             }
             catch (Exception e)
             {
