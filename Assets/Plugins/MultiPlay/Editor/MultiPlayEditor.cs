@@ -186,10 +186,13 @@ namespace MultiPlay
 
                 InitializeTextures();
                 CleanUpMenuItem.RemoveFromHub();
-                Debug.Log($"lastWrite: {lastWriteTime}, lastSync: {lastSyncTime}");
+                if (isClone)
+                {
+                    Debug.Log($"lastWrite: {lastWriteTime}, lastSync: {lastSyncTime}");
+                }
 
 
-                Settings.settingsAsset =
+            Settings.settingsAsset =
                     Resources.Load<MultiPlaySettings>(
                         "settings/MultiPlaySettings"); //there's already one scriptable object asset provided and you don't actually need to create another one, just find it and change its variables
                 Settings.LoadSettings(this);
@@ -619,16 +622,14 @@ namespace MultiPlay
 
                     case RuntimePlatform.OSXEditor:
                     case RuntimePlatform.LinuxEditor:
-
                         cmd = "/bin/bash";
-                        args = $"ln -s \"{destPath}\\{subDirectory}\" \"{sourcePath}\\{subDirectory}\"";
+                        args = $"ln -s \"{sourcePath}/{subDirectory}\" \"{destPath}/{subDirectory}\"";
                         args = "-c \"" + args + "\"";
                         break;
 
                     default:
                         throw new NotImplementedException("Platform not supported!");
                 }
-
 
                 var args1 = args;
                 var thread = new Thread(delegate() { ExcuteCmd(cmd, args1); });
