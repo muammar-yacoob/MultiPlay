@@ -192,7 +192,7 @@ namespace MultiPlay
                 }
 
 
-            Settings.settingsAsset =
+            Settings.SettingsAsset =
                     Resources.Load<MultiPlaySettings>(
                         "settings/MultiPlaySettings"); //there's already one scriptable object asset provided and you don't actually need to create another one, just find it and change its variables
                 Settings.LoadSettings(this);
@@ -401,8 +401,8 @@ namespace MultiPlay
                     for (int i = 1; i < Settings.MaxClones + 1; i++)
                     {
                         string destinationPath =
-                            $"{Settings.clonesPath}/{Application.productName}_[{i}]_Clone".Replace(@"/", @"\");
-                        var createLinkCaption = Settings.linkLibrary ? "- Ω" : string.Empty;
+                            $"{Settings.ClonesPath}/{Application.productName}_[{i}]_Clone".Replace(@"/", @"\");
+                        var createLinkCaption = Settings.LinkLibrary ? "- Ω" : string.Empty;
                         var libPath = Path.Combine(destinationPath, "Library");
                         var linkExists = Directory.Exists(libPath);
                         var openLinkCaption = string.Empty;
@@ -415,14 +415,14 @@ namespace MultiPlay
                         GUI.enabled = !Directory.Exists(destinationPath + "\\Temp");
 
                         GUILayout.BeginHorizontal();
-                        if (Directory.Exists(destinationPath)) GUI.contentColor = Color.green;
+                        if (Directory.Exists(destinationPath)) GUI.contentColor = Color.cyan;
                         if (Directory.Exists(destinationPath) && IsSymbolic(libPath)) GUI.contentColor = Color.yellow;
 
                         if (GUILayout.Button(btnCaption, GUILayout.Height(buttonHeight)))
                         {
                             if (!Directory.Exists(destinationPath))
                             {
-                                if (!Settings.linkLibrary)
+                                if (!Settings.LinkLibrary)
                                 {
                                     var libSize = await GetDirSize($"{Application.dataPath}/../Library");
                                     string sizeInMB = libSize.ToSize(ByteExtensions.SizeUnits.MB);
@@ -451,7 +451,7 @@ namespace MultiPlay
                                 CreateLink(destinationPath, "ProjectSettings");
                                 CreateLink(destinationPath, "Packages");
 
-                                if (Settings.linkLibrary)
+                                if (Settings.LinkLibrary)
                                     CreateLink(destinationPath, "Library"); //kills auto sync.
                             }
 
@@ -494,7 +494,7 @@ namespace MultiPlay
                             EditorGUILayout.Space(5 / ppp);
                             GUILayout.BeginVertical(GUILayout.Height(Screen.height - pad * 2),
                                 GUILayout.Width(Screen.width - pad * 2));
-                            Settings.linkLibrary = GUILayout.Toggle(Settings.linkLibrary, "Link Library");
+                            Settings.LinkLibrary = GUILayout.Toggle(Settings.LinkLibrary, "Link Library");
 
                             Settings.MaxClones = EditorGUILayout.IntField(
                                 new GUIContent("Max clones:",
@@ -502,30 +502,30 @@ namespace MultiPlay
                                 Mathf.Clamp(Settings.MaxClones, 1, Settings.MaxClonesLimit));
                             Settings.MaxClones = Mathf.Clamp(Settings.MaxClones, 1, Settings.MaxClonesLimit);
 
-                            Settings.clonesPath = EditorGUILayout.TextField(
-                                new GUIContent("Clones Path:", "Default Path of project clones"), Settings.clonesPath);
+                            Settings.ClonesPath = EditorGUILayout.TextField(
+                                new GUIContent("Clones Path:", "Default Path of project clones"), Settings.ClonesPath);
                             if (GUILayout.Button("Browse", GUILayout.Height(buttonHeight),
                                     GUILayout.Width((Screen.width - pad * 2) / ppp)))
                             {
-                                string path = EditorUtility.OpenFolderPanel("Select Clones Folder", Settings.clonesPath,
+                                string path = EditorUtility.OpenFolderPanel("Select Clones Folder", Settings.ClonesPath,
                                     "");
                                 if (path.Length != 0)
                                 {
-                                    Settings.clonesPath = path.Replace('/', '\\');
+                                    Settings.ClonesPath = path.Replace('/', '\\');
                                     Settings.SaveSettings();
                                     Repaint();
                                 }
                             }
 
                             //GUI.Label(new Rect(10, pad0, 100, 40), GUI.tooltip); //another way to display the tool tip
-                            string libraryTip = (Settings.linkLibrary)
+                            string libraryTip = (Settings.LinkLibrary)
                                 ? $"including Library link. i.e. faster but may break some 3rd party packages (recommended for most small projects)"
                                 : "excluding Library link. i.e. project configuration and packages will be stored separately at an extra disk cost. This option is safer for larger projects";
-                            var msgType = (Settings.linkLibrary) ? MessageType.Warning : MessageType.Info;
+                            var msgType = (Settings.LinkLibrary) ? MessageType.Warning : MessageType.Info;
 
                             GUILayout.BeginHorizontal(GUILayout.Width((Screen.width - pad) / ppp));
                             EditorGUILayout.HelpBox(
-                                $"New clones will be created in [{new DirectoryInfo(Settings.clonesPath).Name}] {libraryTip}.",
+                                $"New clones will be created in [{new DirectoryInfo(Settings.ClonesPath).Name}] {libraryTip}.",
                                 msgType);
                             GUILayout.EndHorizontal();
 
@@ -557,7 +557,7 @@ namespace MultiPlay
             for (int i = 1; i < Settings.MaxClones + 1; i++)
             {
                 string destinationPath =
-                    $"{Settings.clonesPath}/{Application.productName}_[{i}]_Clone".Replace(@"/", @"\");
+                    $"{Settings.ClonesPath}/{Application.productName}_[{i}]_Clone".Replace(@"/", @"\");
                 //if (i == 1) result = Directory.Exists(destinationPath);
                 //result = result || Directory.Exists(destinationPath);
 
@@ -573,7 +573,7 @@ namespace MultiPlay
             for (int i = 1; i < Settings.MaxClones + 1; i++)
             {
                 string destinationPath =
-                    $"{Settings.clonesPath}/{Application.productName}_[{i}]_Clone".Replace(@"/", @"\");
+                    $"{Settings.ClonesPath}/{Application.productName}_[{i}]_Clone".Replace(@"/", @"\");
                 if (i == 1) result = Directory.Exists(destinationPath + "\\Temp");
 
                 result = result || Directory.Exists(destinationPath + "\\Temp");

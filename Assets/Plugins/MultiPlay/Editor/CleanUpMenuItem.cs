@@ -17,7 +17,7 @@ namespace MultiPlay
             if (clonesFound == 0)
             {
                 if (!EditorUtility.DisplayDialog("Clearing References",
-                        $"No clones were found in {Settings.clonesPath}, Try clear references anyway?",
+                        $"No clones were found in {Settings.ClonesPath}, Try clear references anyway?",
                         "Proceed", "Cancel"))
                     return;
             }
@@ -114,7 +114,7 @@ namespace MultiPlay
         {
             try
             {
-                var tmpPath = new DirectoryInfo($"{Settings.clonesPath}");
+                var tmpPath = new DirectoryInfo($"{Settings.ClonesPath}");
 
                 foreach (var dir in tmpPath.EnumerateDirectories("*clone*"))
                 {

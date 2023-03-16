@@ -3,34 +3,34 @@
     internal static class Settings
     {
         //Settings: Hard coded
-        public static MultiPlaySettings settingsAsset;
+        public static MultiPlaySettings SettingsAsset;
         public static readonly int MaxClonesLimit = 30;
         public const Licence productLicence = Licence.Full;
 
         //Settings Preferences
         public static int MaxClones;
-        public static string clonesPath;
-        public static bool linkLibrary;
+        public static string ClonesPath;
+        public static bool LinkLibrary;
 
         public static void SaveSettings()
         {
-            settingsAsset.clonesPath = clonesPath;
-            settingsAsset.maxNumberOfClones = MaxClones;
-            settingsAsset.copyLibrary = linkLibrary;
+            SettingsAsset.clonesPath = ClonesPath;
+            SettingsAsset.maxNumberOfClones = MaxClones;
+            SettingsAsset.copyLibrary = LinkLibrary;
         }
 
         public static void LoadSettings(MultiPlayEditor multiPlayEditor)
         {
-            if (string.IsNullOrEmpty(clonesPath))
+            if (string.IsNullOrEmpty(ClonesPath))
             {
-                clonesPath = settingsAsset.clonesPath;
+                ClonesPath = SettingsAsset.clonesPath;
             }
-            MaxClones = productLicence == Licence.Default? 1 : settingsAsset.maxNumberOfClones;
-            linkLibrary = settingsAsset.copyLibrary;
+            MaxClones = productLicence == Licence.Default? 1 : SettingsAsset.maxNumberOfClones;
+            LinkLibrary = SettingsAsset.copyLibrary;
 
-            if (string.IsNullOrEmpty(clonesPath))
+            if (string.IsNullOrEmpty(ClonesPath))
             {
-                clonesPath = clonesPath.Replace(@"/", @"\");
+                ClonesPath = ClonesPath.Replace(@"/", @"\");
             }
         }
 
