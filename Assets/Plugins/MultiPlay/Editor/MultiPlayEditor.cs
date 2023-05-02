@@ -59,7 +59,7 @@ namespace MultiPlay
 
 
         private static float ppp;
-        private static float buttonHeight = 25;
+        private static float buttonHeight = 28;
         private static SynchronizationContext _mainThreadContext;
 
 
@@ -215,8 +215,11 @@ namespace MultiPlay
             }
         }
 
+        private static bool isRescaled;
         private static void RescaleUI()
         {
+            if (isRescaled) return;
+            isRescaled = true;
             ppp = EditorGUIUtility.pixelsPerPoint;
             buttonHeight /= ppp;
             headerTexScale /= ppp;
@@ -624,47 +627,34 @@ namespace MultiPlay
                     case RuntimePlatform.LinuxEditor:
                         cmd = "/bin/bash";
                         args = $"ln -s \"{sourcePath}/{subDirectory}\" \"{destPath}/{subDirectory}\"";
-                        args = "-c \"" + args + "\"";
                         break;
 
                     default:
                         throw new NotImplementedException("Platform not supported!");
                 }
 
-                var args1 = args;
-                var thread = new Thread(delegate() { ExcuteCmd(cmd, args1); });
-                thread.Start();
+                var process = new System.Diagnostics.Process();
+                process.StartInfo.FileName = cmd;
+                process.StartInfo.Arguments = args;
+                process.StartInfo.UseShellExecute = false;
+                process.StartInfo.RedirectStandardOutput = true;
+                process.Start();
+
+                string output = process.StandardOutput.ReadToEnd();
+                process.WaitForExit();
+
+                if (process.ExitCode != 0)
+                {
+                    Debug.LogWarning($"Could not link {subDirectory}, trying again...\n{output}");
+                    // Handle the error case here
+                }
             }
             catch (Exception e)
             {
-                Debug.LogWarning($"Could not link {subDirectory}, trying again...\n{e.Message}");
-                try
-                {
-                    args = $"/c mklink /d {destPath}\\{subDirectory} {sourcePath}\\{subDirectory}";
-                    var args1 = args;
-                    var thread = new Thread(delegate() { ExcuteCmd("cmd", args1); });
-                    thread.Start();
-                }
-                catch (Exception ex)
-                {
-                    Debug.LogWarning($"Attempt 2 failed.. attempting one last time\n{ex.Message}");
-
-                    try
-                    {
-                        args = $"/c xcopy /s /y {sourcePath}\\{subDirectory} {destPath}\\{subDirectory}";
-                        var thread = new Thread(delegate() { ExcuteCmd("cmd", args); });
-                        thread.Start();
-                        //ClearConsole();
-                    }
-                    catch (Exception exx)
-                    {
-                        Debug.LogError(
-                            $"Links failed. You do not have sufficient previliges to write to windows temporary files. Please contact your system administrator\n{exx.Message}");
-                    }
-                    //this.Close();
-                }
+                Debug.LogError($"Links failed. Please contact your system administrator\n{e.Message}");
             }
         }
+
 
         private void LaunchClone(string destPath)
         {
