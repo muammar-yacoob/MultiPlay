@@ -2,8 +2,6 @@
     using UnityEngine;
     using UnityEditor;
     using System.IO;
-    using UnityEditor.SceneManagement;
-    using UnityEngine.SceneManagement;
 
     namespace MultiPlay
 {

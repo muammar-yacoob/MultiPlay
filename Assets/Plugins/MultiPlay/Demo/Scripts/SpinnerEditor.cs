@@ -4,7 +4,7 @@ using UnityEngine;
 namespace MultiPlay.Demo
 {
     [CustomEditor(typeof(Spinner))]
-    internal class SpawnerEditor : Editor
+    internal class SpinnerEditor : Editor
     {
         private Spinner spinner;
         private Camera cam;
@@ -12,6 +12,7 @@ namespace MultiPlay.Demo
 
         public override void OnInspectorGUI()
         {
+            if(Application.isPlaying) return;
             spinner ??= (Spinner)target;
             cam ??= Camera.main;
             

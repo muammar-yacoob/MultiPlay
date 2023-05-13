@@ -30,8 +30,6 @@ namespace MultiPlay.Demo
                     Random.Range(cam.ViewportToWorldPoint(Vector3.zero).y, cam.ViewportToWorldPoint(Vector3.one).y),1);
                 i.transform.position = randomPos;
             });
-            
-            
             EditorSceneManager.SaveScene(SceneManager.GetActiveScene());
         }
     }

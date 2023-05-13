@@ -61,6 +61,7 @@ namespace MultiPlay
         private static float ppp;
         private static float buttonHeight = 25;
         private static SynchronizationContext _mainThreadContext;
+        private static string cloneCaption;
 
 
         #region License Setup
@@ -202,6 +203,7 @@ namespace MultiPlay
                 {
                     cloneIndex = GetCurrentCloneIndex();
                     cloneName = cloneIndex == 0 ? "Main" : $"clone[{cloneIndex}]";
+                    cloneCaption = Application.productName;
                 }
 
                 string libraryText = Utils.IsLibraryLinked() ? " - Ω" : String.Empty;
@@ -401,7 +403,7 @@ namespace MultiPlay
                     for (int i = 1; i < Settings.MaxClones + 1; i++)
                     {
                         string destinationPath =
-                            $"{Settings.ClonesPath}/{Application.productName}_[{i}]_Clone".Replace(@"/", @"\");
+                            $"{Settings.ClonesPath}/{cloneCaption}_[{i}]_Clone".Replace(@"/", @"\");
                         var createLinkCaption = Settings.LinkLibrary ? "- Ω" : string.Empty;
                         var libPath = Path.Combine(destinationPath, "Library");
                         var linkExists = Directory.Exists(libPath);
@@ -410,8 +412,8 @@ namespace MultiPlay
                             openLinkCaption = IsSymbolic(libPath) ? "- Ω" : String.Empty;
 
                         string btnCaption = Directory.Exists(destinationPath)
-                            ? $"Launch clone [{i}] {openLinkCaption}"
-                            : $"Create clone [{i}] {createLinkCaption}";
+                            ? $"Launch clone {cloneCaption} [{i}] {openLinkCaption}"
+                            : $"Create clone {cloneCaption} [{i}] {createLinkCaption}";
                         GUI.enabled = !Directory.Exists(destinationPath + "\\Temp");
 
                         GUILayout.BeginHorizontal();
@@ -484,6 +486,17 @@ namespace MultiPlay
 
                 if (Settings.productLicence == Settings.Licence.Full)
                 {
+                    EditorGUILayout.Space(5 / ppp);
+                    GUILayout.BeginVertical(GUILayout.Height(Screen.height - pad * 2),
+                        GUILayout.Width(Screen.width - pad * 2));
+                    
+                    GUILayout.Space(15);
+                    Settings.LinkLibrary = GUILayout.Toggle(Settings.LinkLibrary, "Link Library");
+                    cloneCaption = EditorGUILayout.TextField(
+                        new GUIContent("Clone Caption:", "Clone's caption."), cloneCaption);
+                    
+                    GUILayout.Space(15);
+                    
                     showSettings =
                         EditorGUILayout.BeginFoldoutHeaderGroup(showSettings,
                             "Settings"); //, skin.GetStyle("PanHeaderDefault"));
@@ -491,11 +504,9 @@ namespace MultiPlay
                     {
                         try
                         {
-                            EditorGUILayout.Space(5 / ppp);
-                            GUILayout.BeginVertical(GUILayout.Height(Screen.height - pad * 2),
-                                GUILayout.Width(Screen.width - pad * 2));
-                            Settings.LinkLibrary = GUILayout.Toggle(Settings.LinkLibrary, "Link Library");
 
+                            
+                            
                             Settings.MaxClones = EditorGUILayout.IntField(
                                 new GUIContent("Max clones:",
                                     $"Maximum number of allowed clones is {Settings.MaxClonesLimit}"),
@@ -557,7 +568,7 @@ namespace MultiPlay
             for (int i = 1; i < Settings.MaxClones + 1; i++)
             {
                 string destinationPath =
-                    $"{Settings.ClonesPath}/{Application.productName}_[{i}]_Clone".Replace(@"/", @"\");
+                    $"{Settings.ClonesPath}/{cloneCaption}_[{i}]_Clone".Replace(@"/", @"\");
                 //if (i == 1) result = Directory.Exists(destinationPath);
                 //result = result || Directory.Exists(destinationPath);
 
@@ -573,7 +584,7 @@ namespace MultiPlay
             for (int i = 1; i < Settings.MaxClones + 1; i++)
             {
                 string destinationPath =
-                    $"{Settings.ClonesPath}/{Application.productName}_[{i}]_Clone".Replace(@"/", @"\");
+                    $"{Settings.ClonesPath}/{cloneCaption}_[{i}]_Clone".Replace(@"/", @"\");
                 if (i == 1) result = Directory.Exists(destinationPath + "\\Temp");
 
                 result = result || Directory.Exists(destinationPath + "\\Temp");
