@@ -147,7 +147,7 @@ namespace MultiPlay
         #endregion
 
 
-        private void OnEnable()
+        private async Task OnEnable()
         {
             InitializeTextures();
             _mainThreadContext = SynchronizationContext.Current;
@@ -210,6 +210,8 @@ namespace MultiPlay
                 cloneHeaderText = (Settings.productLicence == Settings.Licence.Full)
                     ? $"Clone [{cloneIndex}]{libraryText}"
                     : $"Clone";
+
+                libSize = await GetDirSize($"{Application.dataPath}/../Library");
             }
             catch (Exception ex)
             {
@@ -218,6 +220,8 @@ namespace MultiPlay
         }
 
         private static bool isRescaled;
+        private long libSize;
+
         private static void RescaleUI()
         {
             if (isRescaled) return;
@@ -429,10 +433,10 @@ namespace MultiPlay
                             {
                                 if (!Settings.LinkLibrary)
                                 {
-                                    var libSize = await GetDirSize($"{Application.dataPath}/../Library");
+                                    
                                     string sizeInMB = libSize.ToSize(ByteExtensions.SizeUnits.MB);
                                     var msg =
-                                        $"WARNING!! You're about to create a clone with {sizeInMB}. Are you sure you want to proceed?";
+                                        $"WARNING!\nYou're about to create a clone with {sizeInMB}.\nAre you sure you want to proceed?";
 
                                     var result = EditorUtility.DisplayDialog("Cloning with a library copy", msg,
                                         "Proceed", "Cancel");
@@ -598,15 +602,11 @@ namespace MultiPlay
 
         private static void ReloadScene(string scenePath)
         {
+            if(Application.isPlaying) return;
             try
             { 
                 _mainThreadContext.Post(state =>
                 {
-                    // Scene scene = SceneManager.GetSceneByPath(scenePath);
-                    // if (scene.IsValid())
-                    // {
-                    //     EditorSceneManager.LoadScene(scene.name, LoadSceneMode.Additive);
-                    // }
                     EditorSceneManager.OpenScene(scenePath);
                     Canvas.ForceUpdateCanvases();
 

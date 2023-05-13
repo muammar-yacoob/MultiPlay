@@ -9,19 +9,18 @@ namespace MultiPlay.Demo
         private Spinner spinner;
         private Camera cam;
 
-
         public override void OnInspectorGUI()
         {
             if(Application.isPlaying) return;
             spinner ??= (Spinner)target;
             cam ??= Camera.main;
-            
+            if (cam == null) return;
+
             if (GUILayout.Button("Spin"))
             {
                 spinner.Spin();
             }
             DrawDefaultInspector();
-            //Repaint();
         }
     }
 }

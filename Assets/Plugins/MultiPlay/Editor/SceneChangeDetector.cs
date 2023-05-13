@@ -1,21 +1,24 @@
-﻿    using System;
-    using UnityEngine;
-    using UnityEditor;
-    using System.IO;
+﻿using System;
+using UnityEngine;
+using UnityEditor;
+using System.IO;
 
-    namespace MultiPlay
+namespace MultiPlay
 {
     [InitializeOnLoad]
     public class SceneChangeDetector
     {
         private static FileSystemWatcher watcher;
+        private static string lastSceneChanged = null;
+        private static DateTime lastEventTime = DateTime.MinValue;
+
         public static event Action<string> SceneChanged;
 
         static SceneChangeDetector()
         {
             string projectPath = Directory.GetParent(Application.dataPath)?.FullName;
 
-            watcher = new FileSystemWatcher(projectPath);
+            watcher = new FileSystemWatcher(projectPath, "*.unity");
             watcher.IncludeSubdirectories = true;
             watcher.EnableRaisingEvents = true;
 
@@ -27,19 +30,30 @@
 
         private static void OnFileChanged(object sender, FileSystemEventArgs e)
         {
-            if (e.FullPath.EndsWith(".unity"))
+            if (lastSceneChanged != e.Name || (DateTime.Now - lastEventTime).TotalSeconds > 1)
             {
-                SceneChanged?.Invoke(e.Name);
+                lastSceneChanged = e.Name;
+                lastEventTime = DateTime.Now;
+
+                EditorApplication.update += Update;
             }
         }
 
         private static void OnFileRenamed(object sender, RenamedEventArgs e)
         {
-            if (e.FullPath.EndsWith(".unity"))
+            if (lastSceneChanged != e.Name || (DateTime.Now - lastEventTime).TotalSeconds > 1)
             {
-                SceneChanged?.Invoke(e.Name);
+                lastSceneChanged = e.Name;
+                lastEventTime = DateTime.Now;
+
+                EditorApplication.update += Update;
             }
         }
-    }
 
+        private static void Update()
+        {
+            SceneChanged?.Invoke(lastSceneChanged);
+            EditorApplication.update -= Update;
+        }
+    }
 }
