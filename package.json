@@ -1,0 +1,20 @@
+{
+	"name": "com.sparkgames.multiplay",
+	"version": "1.6.0",
+	"displayName": "MultiPlay",
+	"description": "Helps Multiplayer development by running multiple editors for the same project",
+	"type": "library",
+	"unity": "2020.1",
+	"author": {
+	"name": "Panettone Games",
+	"url": "https://panettonegames.com"
+	},
+	"keywords": [
+	"Multiplayer",
+	"Photon",
+	"Mirror",
+	"PUN", 
+	"Editor",
+	"Multiple"
+  ]
+}

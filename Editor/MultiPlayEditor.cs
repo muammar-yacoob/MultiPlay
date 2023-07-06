@@ -336,7 +336,7 @@ namespace MultiPlay
             GUILayout.EndArea();
         }
 
-        private async void DrawBody()
+        private void DrawBody()
         {
             //Body
             bodyRect = new Rect(pad, headerRect.height + pad, Screen.width - pad * 2,
@@ -740,7 +740,7 @@ namespace MultiPlay
             }
             catch (Exception e)
             {
-                Debug.Log(e.Message);
+                Debug.LogError(e.Message);
             }
             finally
             {
