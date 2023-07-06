@@ -27,7 +27,8 @@ It should be added to Unity menus under: *<font color=#eeeeee>[Tools > MultiPlay
 
 5. Unless `[Auto Sync]` is ticked at the client side, you will have to press the `[Sync]` button every time you make changes to the original project.
 
-![Master window](./res/clone.jpg)![Master window](./res/Library%20Linked%20Clone.jpg)
+![Clone window](./res/Clone.jpg)<br>
+![Library Clone window](./res/Library%20Linked%20Clone.jpg)
 
 ## Common Questions & Issues
 
