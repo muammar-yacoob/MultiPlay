@@ -1,0 +1,48 @@
+
+# MultiPlay <img src='./res/MP Icon.png' style='display:inline; margin-right:10px; height:40px'/>
+*Runs multiple copies of Unity Editor.*
+
+## Installation ##
+In Unity Package Manager (UPM) Add Package from git URL:<BR>
+https://github.com/muammar-yacoob/multiplay.git<br><br>
+Or get Unity Package Installer from [Releases](../../releases)<br>
+
+It should be added to Unity menus under: *<font color=#eeeeee>[Tools > MultiPlay]</font>*
+
+
+## Usage
+
+1. Navigate to `Tools > MultiPlay > Client Manager`.
+   
+2. Click `Create Client`. The button will be deactivated as long as the client window is open.
+
+![Master window](./res/Master.jpg)<br>
+
+
+   > Note: By default, MultiPlay supports an unlimited nu.
+
+3. On the newly launched Unity project, navigate again to `Tools > MultiPlay > Client Manager`. This time you will get a different tool window.
+
+4. Make any changes to your scene in the original project editor and **click save in the original project** to propagate the changes across all launched clients.
+
+5. Unless `[Auto Sync]` is ticked at the client side, you will have to press the `[Sync]` button every time you make changes to the original project.
+
+![Master window](./res/clone.jpg)![Master window](./res/Library%20Linked%20Clone.jpg)
+
+## Common Questions & Issues
+
+### Which Client?
+
+To figure out which client you are running, attach the `LogClientID` script to any game object in the scene. Alternatively, you may use the below script:
+
+```csharp
+int clientIndex = PanettoneGames.MultiPlay.Utils.GetCurrentClientIndex();
+
+if (clientIndex == 0) Debug.Log("MultiPlay is running on: Main Project/Server");
+else Debug.Log($"MultiPlay is running on Client: {clientIndex}");
+Sharing Violation
+Newer versions may complain about sharing the Library folder amongst clients and although it shouldn’t matter in most cases, you may opt to be on the safer side and turn off the [Link Library] option from the settings.
+
+Note: In MultiPlay, this is also available in the settings drop-down menu below the client buttons.
+
+Alternatively, you may simply turn off Unity’s [Directory Monitoring] from: Edit> Preferences> General > Directory Monitoring.

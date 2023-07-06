@@ -61,7 +61,7 @@ namespace MultiPlay
         private static float ppp;
         private static float buttonHeight = 28;
         private static SynchronizationContext _mainThreadContext;
-        private static string cloneCaption;
+        private static string cloneCaption = "";
 
 
         #region License Setup
@@ -203,7 +203,7 @@ namespace MultiPlay
                 {
                     cloneIndex = GetCurrentCloneIndex();
                     cloneName = cloneIndex == 0 ? "Main" : $"clone[{cloneIndex}]";
-                    cloneCaption = Application.productName;
+                    //cloneCaption = Application.productName;
                 }
 
                 string libraryText = Utils.IsLibraryLinked() ? " - Ω" : String.Empty;
@@ -499,8 +499,7 @@ namespace MultiPlay
                     
                     GUILayout.Space(15);
                     Settings.LinkLibrary = GUILayout.Toggle(Settings.LinkLibrary, "Link Library");
-                    cloneCaption = EditorGUILayout.TextField(
-                        new GUIContent("Clone Caption:", "Clone's caption."), cloneCaption);
+                    //cloneCaption = EditorGUILayout.TextField(new GUIContent("Clone Caption:", "Clone's caption."), cloneCaption);
                     
                     GUILayout.Space(15);
                     
