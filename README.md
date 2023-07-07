@@ -5,7 +5,7 @@
 ## Installation ##
 In Unity Package Manager (UPM) Add Package from git URL:<BR>
 https://github.com/muammar-yacoob/multiplay.git<br><br>
-Or get Unity Package Installer from [Releases](../../releases)<br>
+Or get the [Unity Package Installer](./res/Install-com.sparkgames.multiplay-latest.unitypackage)<br>
 
 It should be added to Unity menus under: *<font color=#eeeeee>[Tools > MultiPlay]</font>*
 
@@ -27,7 +27,8 @@ It should be added to Unity menus under: *<font color=#eeeeee>[Tools > MultiPlay
 
 5. Unless `[Auto Sync]` is ticked at the client side, you will have to press the `[Sync]` button every time you make changes to the original project.
 
-![Master window](./res/clone.jpg)![Master window](./res/Library%20Linked%20Clone.jpg)
+![Clone window](./res/Clone.jpg)<br>
+![Library Clone window](./res/Library%20Linked%20Clone.jpg)
 
 ## Common Questions & Issues
 
