@@ -5,7 +5,7 @@
 ## Installation ##
 In Unity Package Manager (UPM) Add Package from git URL:<BR>
 https://github.com/muammar-yacoob/multiplay.git<br><br>
-Or get the [Unity Package Installer](./res/Install-com.sparkgames.multiplay-latest.zip)<br>
+Or get the [Unity Package Installer](../../releases/download/v1.0.0/Install-com.sparkgames.multiplay-latest.unitypackage)<br>
 
 It should be added to Unity menus under: *<font color=#eeeeee>[Tools > MultiPlay]</font>*
 
