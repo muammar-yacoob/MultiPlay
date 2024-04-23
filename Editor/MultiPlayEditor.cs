@@ -80,7 +80,7 @@ namespace MultiPlay
 
         #region menus
 
-        [MenuItem("Tools/" + licenseMenuCaption + "/clone Manager &C", false, 10)]
+        [MenuItem("Tools/" + licenseMenuCaption + "/Clone Manager &C", false, 10)]
         public static void OpenWindow()
         {
             try
@@ -128,10 +128,12 @@ namespace MultiPlay
             return !Application.isPlaying && !isClone;
         }
 
-        [MenuItem("Tools/" + licenseMenuCaption + "/Rate Please :)", false, 30)]
-        public static void MenuRate() =>
-            Application.OpenURL(
-                $"https://assetstore.unity.com/packages/tools/utilities/multiplay-multiplayer-testing-without-builds-170pad9?aid=1011lds77&utm_source=aff#reviews");
+        [MenuItem("Tools/" + licenseMenuCaption + "/Please \u2b50 Rate :) ", false, 30)]
+        public static void MenuRate()
+        {
+            Application.OpenURL($"https://assetstore.unity.com/packages/tools/utilities/multiplay-170209?aid=1011lds77#reviews");
+            Application.OpenURL($"https://github.com/muammar-yacoob/MultiPlay");
+        }
 
         [MenuItem("Tools/" + licenseMenuCaption + "/Help", false, 30)]
         public static void MenuHelp()
@@ -566,6 +568,12 @@ private void DrawBody()
         private static void ReloadScene(string scenePath)
         {
             if(Application.isPlaying) return;
+            string activeScene = SceneManager.GetActiveScene().path;
+            if (string.IsNullOrEmpty(activeScene))
+            {
+                Debug.LogWarning("No Active Scene to reload.");
+                return;
+            }
             try
             { 
                 _mainThreadContext.Post(state =>
