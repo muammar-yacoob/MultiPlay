@@ -20,7 +20,7 @@ namespace MultiPlay
 
         private string sourcePath;
 
-        //Format
+        //Format 
         private Texture2D headerTexture;
         private static float windowMinWidth = 180;
         private static float windowMinHeight = 180;
@@ -336,81 +336,69 @@ namespace MultiPlay
             GUILayout.EndArea();
         }
 
-        private void DrawBody()
+private void DrawBody()
+{
+    bodyRect = new Rect(pad, headerRect.height + pad, Screen.width - pad * 2, Screen.height - headerRect.height - pad * 2);
+
+    if (EditorApplication.isPlaying)
+    {
+        GUILayout.BeginArea(bodyRect);
+        try
         {
-            //Body
-            bodyRect = new Rect(pad, headerRect.height + pad, Screen.width - pad * 2,
-                Screen.height - headerRect.height - pad * 2);
-
-
-            #region EditorPlaying
-
-            if (EditorApplication.isPlaying)
+            EditorGUILayout.HelpBox($"{cloneName}: Control panel is disabled while playing.", MessageType.Info);
+            ShowNotification(new GUIContent($"Running on {cloneName}..."), 1);
+            if (GUILayout.Button("More cool tools...", skin.GetStyle("PanStoreLink")))
             {
-                GUILayout.BeginArea(bodyRect);
-                EditorGUILayout.HelpBox($"{cloneName}: Control panel is disabled while playing.", MessageType.Info);
-                ShowNotification(new GUIContent($"Running on {cloneName}..."), 1);
-                if (GUILayout.Button("More cool tools...", skin.GetStyle("PanStoreLink")))
-                {
-                    Application.OpenURL($"https://assetstore.unity.com/publishers/" + myPubID);
-                    Application.OpenURL("https://panettonegames.com/");
-                }
+                Application.OpenURL($"https://assetstore.unity.com/publishers/" + myPubID);
+                Application.OpenURL("https://panettonegames.com/");
+            }
+        }
+        finally
+        {
+            GUILayout.EndArea();
+        }
+        return;
+    }
 
-                GUILayout.EndArea();
-                return;
+    GUILayout.BeginArea(bodyRect);
+    GUILayout.BeginVertical(GUILayout.Height((Screen.height - pad) / ppp), GUILayout.Width((Screen.width - pad * 2) / ppp));
+    try
+    {
+        if (isClone)
+        {
+            if (GUILayout.Button("Sync"))
+            {
+                hasChanged = false;
+                lastSyncTime = DateTime.Now;
+                ShowNotification(new GUIContent("Syncing..."));
+                ReloadScene(SceneManager.GetActiveScene().path);
             }
 
-            #endregion
+            string autoSyncCaption = !IsLibraryLinked() ? "Auto Sync" : "Auto Sync unavailable in Link Library Mode";
+            GUI.enabled = !Utils.IsLibraryLinked();
+            autoSync = GUILayout.Toggle(!IsLibraryLinked() && autoSync, autoSyncCaption);
+            GUI.enabled = true;
 
-            if (isClone) //clone
+            if (hasChanged)
+                EditorGUILayout.HelpBox("Changes from original build were detected. Make sure to Sync before running", MessageType.Warning);
+            else
+                EditorGUILayout.HelpBox($"You're Good to Go!\nLast Changed:\t{lastWriteTime}\nLast Synced:\t{lastSyncTime}", MessageType.Info);
+        }
+        else
+        {
+            if (isCreatingReferences)
             {
-                GUILayout.BeginArea(bodyRect);
-                if (GUILayout.Button("Sync"))
-                {
-                    hasChanged = false;
-                    lastSyncTime = DateTime.Now;
-                    ShowNotification(new GUIContent("Syncing..."));
-                    ReloadScene(SceneManager.GetActiveScene().path);
-                }
-
-                string autoSyncCaption =
-                    !IsLibraryLinked() ? "Auto Sync" : "Auto Sync unavailable in Link Library Mode";
-                GUI.enabled = !Utils.IsLibraryLinked();
-                autoSync = GUILayout.Toggle(!IsLibraryLinked() && autoSync, autoSyncCaption);
-                GUI.enabled = true;
-
-                if (hasChanged)
-                    EditorGUILayout.HelpBox(
-                        "Changes from original build were detected. Make sure to Sync before running",
-                        MessageType.Warning);
-                else
-                    EditorGUILayout.HelpBox(
-                        $"You're Good to Go!\nLast Changed:\t{lastWriteTime}\nLast Synced:\t{lastSyncTime}",
-                        MessageType.Info);
-
-                GUILayout.EndArea();
+                isCreatingReferences = false;
+                ShowNotification(new GUIContent("Creating clone..."));
             }
-
-            else //Original Copy
+            else
             {
-                GUILayout.BeginArea(bodyRect); ////////////////////1
-                GUILayout.BeginVertical(GUILayout.Height((Screen.height - pad) / ppp),
-                    GUILayout.Width((Screen.width - pad * 2) / ppp)); //////////////2
-
-                if (isCreatingReferences)
+                scrollPos = EditorGUILayout.BeginScrollView(scrollPos, GUILayout.ExpandWidth(true), GUILayout.Height(105 / ppp), GUILayout.Width((Screen.width - pad * 2) / ppp));
+                try
                 {
-                    isCreatingReferences = false;
-                    ShowNotification(new GUIContent("Creating clone..."));
-                }
-                else //Create References Or Launch
-                {
-                    scrollPos = EditorGUILayout.BeginScrollView(scrollPos, GUILayout.ExpandWidth(true),
-                        GUILayout.Height(105 / ppp), GUILayout.Width((Screen.width - pad * 2) / ppp));
-
                     for (int i = 1; i < Settings.MaxClones + 1; i++)
                     {
-                        string destinationPath =
-                            $"{Settings.ClonesPath}/{cloneCaption}_[{i}]_Clone".Replace(@"/", @"\");
+                        string destinationPath = $"{Settings.ClonesPath}/{cloneCaption}_[{i}]_Clone".Replace(@"/", @"\");
                         var createLinkCaption = Settings.LinkLibrary ? "- Ω" : string.Empty;
                         var libPath = Path.Combine(destinationPath, "Library");
                         var linkExists = Directory.Exists(libPath);
@@ -418,9 +406,7 @@ namespace MultiPlay
                         if (linkExists)
                             openLinkCaption = IsSymbolic(libPath) ? "- Ω" : String.Empty;
 
-                        string btnCaption = Directory.Exists(destinationPath)
-                            ? $"Launch clone {cloneCaption} [{i}] {openLinkCaption}"
-                            : $"Create clone {cloneCaption} [{i}] {createLinkCaption}";
+                        string btnCaption = Directory.Exists(destinationPath) ? $"Launch clone {cloneCaption} [{i}] {openLinkCaption}" : $"Create clone {cloneCaption} [{i}] {createLinkCaption}";
                         GUI.enabled = !Directory.Exists(destinationPath + "\\Temp");
 
                         GUILayout.BeginHorizontal();
@@ -433,16 +419,13 @@ namespace MultiPlay
                             {
                                 if (!Settings.LinkLibrary)
                                 {
-                                    
                                     string sizeInMB = libSize.ToSize(ByteExtensions.SizeUnits.MB);
-                                    var msg =
-                                        $"WARNING!\nYou're about to create a clone with {sizeInMB}.\nAre you sure you want to proceed?";
-
-                                    var result = EditorUtility.DisplayDialog("Cloning with a library copy", msg,
-                                        "Proceed", "Cancel");
+                                    var msg = $"WARNING!\nYou're about to create a clone with {sizeInMB}.\nAre you sure you want to proceed?";
+                                    var result = EditorUtility.DisplayDialog("Cloning with a library copy", msg, "Proceed", "Cancel");
                                     if (!result)
                                     {
-                                        Debug.Log($"Operation canceled by user.");
+                                        Debug.Log("Operation canceled by user.");
+                                        GUILayout.EndArea();
                                         return;
                                     }
                                 }
@@ -468,9 +451,6 @@ namespace MultiPlay
                             hasChanged = false;
                             LaunchClone(destinationPath);
                             CleanUpMenuItem.RemoveFromHub();
-                            //Close();
-
-                            GUI.enabled = true;
                         }
 
                         if (Directory.Exists(destinationPath))
@@ -486,81 +466,65 @@ namespace MultiPlay
                         GUILayout.EndHorizontal();
                         GUI.contentColor = defaultFontColor;
                     }
-
+                }
+                finally
+                {
                     EditorGUILayout.EndScrollView();
-                    GUI.enabled = true;
                 }
 
                 if (Settings.productLicence == Settings.Licence.Full)
                 {
                     EditorGUILayout.Space(5 / ppp);
-                    GUILayout.BeginVertical(GUILayout.Height(Screen.height - pad * 2),
-                        GUILayout.Width(Screen.width - pad * 2));
-                    
-                    GUILayout.Space(15);
-                    Settings.LinkLibrary = GUILayout.Toggle(Settings.LinkLibrary, "Link Library");
-                    //cloneCaption = EditorGUILayout.TextField(new GUIContent("Clone Caption:", "Clone's caption."), cloneCaption);
-                    
-                    GUILayout.Space(15);
-                    
-                    showSettings =
-                        EditorGUILayout.BeginFoldoutHeaderGroup(showSettings,
-                            "Settings"); //, skin.GetStyle("PanHeaderDefault"));
-                    if (showSettings)
+                    GUILayout.BeginVertical(GUILayout.Height(Screen.height - pad * 2), GUILayout.Width(Screen.width - pad * 2));
+                    try
                     {
-                        try
+                        Settings.LinkLibrary = GUILayout.Toggle(Settings.LinkLibrary, "Link Library");
+
+                        showSettings = EditorGUILayout.BeginFoldoutHeaderGroup(showSettings, "Settings");
+                        if (showSettings)
                         {
-
-                            
-                            
-                            Settings.MaxClones = EditorGUILayout.IntField(
-                                new GUIContent("Max clones:",
-                                    $"Maximum number of allowed clones is {Settings.MaxClonesLimit}"),
-                                Mathf.Clamp(Settings.MaxClones, 1, Settings.MaxClonesLimit));
-                            Settings.MaxClones = Mathf.Clamp(Settings.MaxClones, 1, Settings.MaxClonesLimit);
-
-                            Settings.ClonesPath = EditorGUILayout.TextField(
-                                new GUIContent("Clones Path:", "Default Path of project clones"), Settings.ClonesPath);
-                            if (GUILayout.Button("Browse", GUILayout.Height(buttonHeight),
-                                    GUILayout.Width((Screen.width - pad * 2) / ppp)))
+                            try
                             {
-                                string path = EditorUtility.OpenFolderPanel("Select Clones Folder", Settings.ClonesPath,
-                                    "");
-                                if (path.Length != 0)
+                                Settings.MaxClones = EditorGUILayout.IntField(new GUIContent("Max clones:", $"Maximum number of allowed clones is {Settings.MaxClonesLimit}"), Mathf.Clamp(Settings.MaxClones, 1, Settings.MaxClonesLimit));
+                                Settings.MaxClones = Mathf.Clamp(Settings.MaxClones, 1, Settings.MaxClonesLimit);
+
+                                Settings.ClonesPath = EditorGUILayout.TextField(new GUIContent("Clones Path:", "Default Path of project clones"), Settings.ClonesPath);
+                                if (GUILayout.Button("Browse", GUILayout.Height(buttonHeight), GUILayout.Width((Screen.width - pad * 2) / ppp)))
                                 {
-                                    Settings.ClonesPath = path.Replace('/', '\\');
-                                    Settings.SaveSettings();
-                                    Repaint();
+                                    string path = EditorUtility.OpenFolderPanel("Select Clones Folder", Settings.ClonesPath, "");
+                                    if (path.Length != 0)
+                                    {
+                                        Settings.ClonesPath = path.Replace('/', '\\');
+                                        Settings.SaveSettings();
+                                        Repaint();
+                                    }
                                 }
+
+                                string libraryTip = (Settings.LinkLibrary) ? "including Library link. i.e. faster but may break some 3rd party packages (recommended for most small projects)" : "excluding Library link. i.e. project configuration and packages will be stored separately at an extra disk cost. This option is safer for larger projects";
+                                var msgType = (Settings.LinkLibrary) ? MessageType.Warning : MessageType.Info;
+
+                                EditorGUILayout.HelpBox($"New clones will be created in [{new DirectoryInfo(Settings.ClonesPath).Name}] {libraryTip}.", msgType);
                             }
-
-                            //GUI.Label(new Rect(10, pad0, 100, 40), GUI.tooltip); //another way to display the tool tip
-                            string libraryTip = (Settings.LinkLibrary)
-                                ? $"including Library link. i.e. faster but may break some 3rd party packages (recommended for most small projects)"
-                                : "excluding Library link. i.e. project configuration and packages will be stored separately at an extra disk cost. This option is safer for larger projects";
-                            var msgType = (Settings.LinkLibrary) ? MessageType.Warning : MessageType.Info;
-
-                            GUILayout.BeginHorizontal(GUILayout.Width((Screen.width - pad) / ppp));
-                            EditorGUILayout.HelpBox(
-                                $"New clones will be created in [{new DirectoryInfo(Settings.ClonesPath).Name}] {libraryTip}.",
-                                msgType);
-                            GUILayout.EndHorizontal();
-
-                            //GUILayout.Space(10);
-                            GUILayout.EndVertical();
-                        }
-                        catch (Exception)
-                        {
-                            Debug.LogError("Settings Error");
+                            finally
+                            {
+                                EditorGUILayout.EndFoldoutHeaderGroup();
+                            }
                         }
                     }
+                    finally
+                    {
+                        GUILayout.EndVertical();
+                    }
                 }
-
-                GUILayout.EndVertical();
-                GUILayout.EndArea();
             }
         }
-
+    }
+    finally
+    {
+        GUILayout.EndVertical();
+        GUILayout.EndArea();
+    }
+}
         private bool IsSymbolic(string path)
         {
             FileInfo pathInfo = new FileInfo(path);
