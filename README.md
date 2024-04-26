@@ -7,7 +7,7 @@ In Unity Package Manager (UPM) Add Package from git URL:<BR>
 https://github.com/muammar-yacoob/multiplay.git<br><br>
 Or get the [Unity Package Installer](../../releases/download/v1.0.0/Install-com.sparkgames.multiplay-latest.unitypackage)<br>
 
-It should be added to Unity menus under: *<font color=#eeeeee>[Tools > MultiPlay]</font>*
+It should be added to Unity menus under: *<font color=#eeeeee>`[Tools > MultiPlay]`</font>*
 
 
 ## Usage
@@ -17,9 +17,6 @@ It should be added to Unity menus under: *<font color=#eeeeee>[Tools > MultiPlay
 2. Click `Create Client`. The button will be deactivated as long as the client window is open.
 
 ![Master window](./res/Master.jpg)<br>
-
-
-   > Note: By default, MultiPlay supports an unlimited nu.
 
 3. On the newly launched Unity project, navigate again to `Tools > MultiPlay > Client Manager`. This time you will get a different tool window.
 
@@ -41,9 +38,5 @@ int clientIndex = PanettoneGames.MultiPlay.Utils.GetCurrentClientIndex();
 
 if (clientIndex == 0) Debug.Log("MultiPlay is running on: Main Project/Server");
 else Debug.Log($"MultiPlay is running on Client: {clientIndex}");
-Sharing Violation
-Newer versions may complain about sharing the Library folder amongst clients and although it shouldn’t matter in most cases, you may opt to be on the safer side and turn off the [Link Library] option from the settings.
-
-Note: In MultiPlay, this is also available in the settings drop-down menu below the client buttons.
-
-Alternatively, you may simply turn off Unity’s [Directory Monitoring] from: Edit> Preferences> General > Directory Monitoring.
+```
+>Note: Newer Unity Editor versions may complain about `Sharing Violation` due to sharing the Library folder amongst clients; Although it will not matter in most cases, you may opt to be on the safer side and turn off the `[Link Library]` option from the settings drop-down menu below the client buttons. Alternatively, you may simply turn off Unity’s `[Directory Monitoring]` from `Edit> Preferences> General> Directory Monitoring`
