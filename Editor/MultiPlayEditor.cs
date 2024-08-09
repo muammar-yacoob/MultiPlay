@@ -134,12 +134,10 @@ namespace MultiPlay
                 sourcePath = $"{Application.dataPath}/..";
                 sourcePath = sourcePath.Replace(@"/", @"\");
 
-                headerText = (Settings.productLicence == Settings.Licence.Full) ? "MultiPlay" : "DualPlay";
-                headerStyle = (Settings.productLicence == Settings.Licence.Full)
-                    ? skin.GetStyle("PanHeaderFull")
-                    : skin.GetStyle("PanHeaderDefault");
-                linkStyle = skin.GetStyle("SymLink");
-                nonLinkStyle = skin.GetStyle("NoLink");
+                headerText = "MultiPlay";
+                headerStyle = skin.GetStyle("CustomH1");
+                linkStyle = skin.GetStyle("CustomLink");
+                nonLinkStyle = skin.GetStyle("CustomButton");
 
                 defaultFontColor = GUI.contentColor;
 
