@@ -1486,7 +1486,7 @@ MonoBehaviour:
     m_FixedHeight: 0
     m_StretchWidth: 1
     m_StretchHeight: 0
-  - m_Name: CustomLink
+  - m_Name: PanStoreLink
     m_Normal:
       m_Background: {fileID: 0}
       m_ScaledBackgrounds: []
